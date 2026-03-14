@@ -25,7 +25,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
 
-function getConfig(projectPath: string, dryRun: boolean): AgentConfig {
+function getConfig(_projectPath: string, dryRun: boolean): AgentConfig {
   return {
     name: 'CTO Agent',
     type: 'cto',

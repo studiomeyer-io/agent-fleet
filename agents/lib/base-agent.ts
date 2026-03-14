@@ -178,13 +178,15 @@ ${cleanContent}`;
   return { reportId, content: cleanContent, filename, durationMs };
 }
 
-function makeFilename(type: string, topic: string): string {
+/** @internal Exported for testing */
+export function makeFilename(type: string, topic: string): string {
   const date = new Date().toISOString().slice(0, 10);
   const slug = topic.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 60);
   return `${date}-${type}-${slug}.md`;
 }
 
-function parseMetadata(content: string): Record<string, unknown> {
+/** @internal Exported for testing */
+export function parseMetadata(content: string): Record<string, unknown> {
   const patterns = [
     /```json-metadata\s*\n([\s\S]*?)\n\s*```/,
     /```json\s*\n(\{[\s\S]*?"total_sources"[\s\S]*?\})\n\s*```/,
@@ -200,7 +202,8 @@ function parseMetadata(content: string): Record<string, unknown> {
   return {};
 }
 
-function extractSummary(content: string, maxLength = 500): string {
+/** @internal Exported for testing */
+export function extractSummary(content: string, maxLength = 500): string {
   const summaryMatch = content.match(/## (?:Executive Summary|Summary|TL;DR)\s*\n([\s\S]*?)(?=\n## |\n---|\n$)/i);
   if (summaryMatch) return summaryMatch[1].trim().slice(0, maxLength);
   const firstPara = content.split('\n\n').find(p => p.trim().length > 50);

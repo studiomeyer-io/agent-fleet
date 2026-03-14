@@ -1,8 +1,20 @@
 # Agent Fleet
 
+[![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
+
 **Multi-agent orchestration for Claude Code CLI.** Run specialized AI agents in parallel — research, critique, analyze, fix, and discuss.
 
-Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP](https://modelcontextprotocol.io/) tool integration. Each agent is a Claude subprocess with specific tools, roles, and constraints. Flat-rate via Claude Max Plan.
+Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP](https://modelcontextprotocol.io/) tool integration. Each agent is a Claude subprocess with specific tools, roles, and constraints.
+
+## Why Agent Fleet?
+
+Most AI agent frameworks (CrewAI, AutoGen, LangGraph) treat LLMs as API endpoints — you manage tokens, tools, and prompts yourself. **Agent Fleet takes a different approach:** each agent is a full Claude Code session that can natively read files, edit code, run commands, and use MCP tools — just like a human developer.
+
+- **No API key management** — Claude Code handles authentication
+- **Native tool use** — agents read, write, and execute code directly (not through function-calling hacks)
+- **MCP ecosystem** — plug in any MCP server for web search, code analysis, GitHub, and more
+- **Parallel execution** — Conductor runs 3+ agents simultaneously, they discuss and synthesize
+- **Zero token counting** — flat-rate via Claude Max Plan
 
 ---
 
