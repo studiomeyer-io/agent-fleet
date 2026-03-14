@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+reports/*.md
+reports/.partial-*.json
+!reports/.gitkeep
+CLAUDE.md

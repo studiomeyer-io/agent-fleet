@@ -1,0 +1,50 @@
+{
+  "name": "agent-fleet",
+  "version": "0.1.0",
+  "description": "Multi-agent orchestration framework for Claude Code CLI. Research, critique, analyze, fix, and discuss — with parallel agent execution.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/studiomeyer-io/agent-fleet.git"
+  },
+  "homepage": "https://github.com/studiomeyer-io/agent-fleet",
+  "bugs": {
+    "url": "https://github.com/studiomeyer-io/agent-fleet/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "claude",
+    "claude-code",
+    "multi-agent",
+    "mcp",
+    "orchestration",
+    "research",
+    "code-analysis",
+    "autonomous-agents"
+  ],
+  "scripts": {
+    "research": "npx tsx agents/research-agent.ts",
+    "critic": "npx tsx agents/critic-agent.ts",
+    "analyst": "npx tsx agents/analyst-agent.ts",
+    "cto": "npx tsx agents/cto-agent.ts",
+    "discovery": "npx tsx agents/discovery-agent.ts",
+    "repair": "npx tsx agents/repair-agent.ts",
+    "conductor": "npx tsx agents/conductor.ts",
+    "typecheck": "npx tsc --noEmit"
+  },
+  "dependencies": {
+    "tsx": "^4.7.0"
+  },
+  "optionalDependencies": {
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
