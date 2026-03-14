@@ -24,9 +24,10 @@ const config: AgentConfig = {
   extraTools: ['Read', 'Glob', 'Grep', 'Bash', 'WebSearch'],
 };
 
-type AnalysisType = 'project' | 'compare' | 'patterns' | 'health';
+export type AnalysisType = 'project' | 'compare' | 'patterns' | 'health';
 
-function buildPrompt(type: AnalysisType, paths: string[]): string {
+/** @internal Exported for testing */
+export function buildPrompt(type: AnalysisType, paths: string[]): string {
   const baseRole = `You are the Analyst Agent — an experienced code archaeologist and system analyst.
 Your job: Analyze existing projects, recognize patterns, find gems, suggest improvements.
 You look FORWARD: Not just what's broken, but what we could do BETTER or NEW.

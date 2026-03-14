@@ -25,7 +25,8 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
 
-function getConfig(_projectPath: string, dryRun: boolean): AgentConfig {
+/** @internal Exported for testing */
+export function getConfig(_projectPath: string, dryRun: boolean): AgentConfig {
   return {
     name: 'CTO Agent',
     type: 'cto',
@@ -74,7 +75,8 @@ Test after each fix. Report what you did.`,
   return roles[mode] ?? roles.open;
 }
 
-function buildPrompt(projectPath: string, issue: string, reportContext: string | undefined, dryRun: boolean): string {
+/** @internal Exported for testing */
+export function buildPrompt(projectPath: string, issue: string, reportContext: string | undefined, dryRun: boolean): string {
   const modeInstruction = dryRun
     ? `DRY RUN MODE: Create ONLY a repair plan. DO NOT modify any files!
 Show for each fix: file, line, current code, planned code.`

@@ -63,3 +63,42 @@ describe('listMcpServers', () => {
     expect(listMcpServers()).toHaveLength(6);
   });
 });
+
+describe('pickMcp deep clone safety', () => {
+  it('mutating returned args does not affect future calls', () => {
+    const result1 = pickMcp('context7');
+    result1['context7'].args.push('--extra-flag');
+    const result2 = pickMcp('context7');
+    expect(result2['context7'].args).not.toContain('--extra-flag');
+  });
+
+  it('mutating returned env does not affect future calls', () => {
+    const result1 = pickMcp('tavily');
+    if (result1['tavily'].env) {
+      result1['tavily'].env['NEW_KEY'] = 'test';
+    }
+    const result2 = pickMcp('tavily');
+    expect(result2['tavily'].env).not.toHaveProperty('NEW_KEY');
+  });
+});
+
+describe('mcpServers structure', () => {
+  it('tavily server has TAVILY_API_KEY in env', () => {
+    const result = pickMcp('tavily');
+    expect(result['tavily'].env).toHaveProperty('TAVILY_API_KEY');
+  });
+
+  it('each server has a valid command (node or npx)', () => {
+    const all = listMcpServers();
+    for (const name of all) {
+      const picked = pickMcp(name as any);
+      const cmd = picked[name].command;
+      expect(['node', 'npx']).toContain(cmd);
+    }
+  });
+
+  it('servers without env return undefined env', () => {
+    const result = pickMcp('context7');
+    expect(result['context7'].env).toBeUndefined();
+  });
+});

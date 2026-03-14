@@ -30,11 +30,12 @@ const REPORTS_DIR = resolve(__dirname, '../reports');
 
 // ─── Types ─────────────────────────────────────────
 
-type ResearchType = 'general' | 'vision' | 'tech' | 'product' | 'competitor' | 'paper' | 'idea' | 'news';
+export type ResearchType = 'general' | 'vision' | 'tech' | 'product' | 'competitor' | 'paper' | 'idea' | 'news';
 
 // ─── Agent Config ─────────────────────────────────
 
-function getConfig(type: ResearchType): AgentConfig {
+/** @internal Exported for testing */
+export function getConfig(type: ResearchType): AgentConfig {
   return {
     name: 'Research Agent',
     type: type === 'general' ? 'research' : type,
@@ -47,7 +48,8 @@ function getConfig(type: ResearchType): AgentConfig {
 
 // ─── Prompt Builder ────────────────────────────────
 
-function buildPrompt(type: ResearchType, topic: string): string {
+/** @internal Exported for testing */
+export function buildPrompt(type: ResearchType, topic: string): string {
   const typeInstructions: Record<ResearchType, string> = {
     general: `Conduct comprehensive research:
 1. Start with broad searches using multiple search terms and angles

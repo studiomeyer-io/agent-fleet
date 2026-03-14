@@ -76,9 +76,9 @@ const ctoAgent: AgentConfig = getConductorConfig();
 
 // ─── Discussion Types ─────────────────────────────────────
 
-type DiscussionMode = 'open' | 'debate' | 'review' | 'improve';
+export type DiscussionMode = 'open' | 'debate' | 'review' | 'improve';
 
-interface DiscussionConfig {
+export interface DiscussionConfig {
   mode: DiscussionMode;
   question: string;
   rounds: number;
@@ -87,7 +87,7 @@ interface DiscussionConfig {
   reportContext?: string;
 }
 
-interface RoundContribution {
+export interface RoundContribution {
   agent: string;
   content: string;
   durationMs: number;
@@ -95,7 +95,8 @@ interface RoundContribution {
 
 // ─── Role Prompts ─────────────────────────────────────────
 
-function agentRole(agent: string, mode: DiscussionMode): string {
+/** @internal Exported for testing */
+export function agentRole(agent: string, mode: DiscussionMode): string {
   const roles: Record<string, Record<DiscussionMode, string>> = {
     research: {
       open: 'You are the Research Agent. ACTIVELY research the topic (tavily_search, WebSearch). Deliver facts, data, market info, trends. No opinions without sources.',
@@ -125,7 +126,8 @@ function agentRole(agent: string, mode: DiscussionMode): string {
 
 // ─── Prompt Builders ──────────────────────────────────────
 
-function buildRound1Prompt(agent: string, config: DiscussionConfig, agentMap: Record<string, AgentConfig>): string {
+/** @internal Exported for testing */
+export function buildRound1Prompt(agent: string, config: DiscussionConfig, agentMap: Record<string, AgentConfig>): string {
   const role = agentRole(agent, config.mode);
   const context = config.reportContext
     ? `\n\n--- REPORT UNDER DISCUSSION ---\n${config.reportContext}\n--- END REPORT ---\n`
@@ -149,7 +151,8 @@ DISCUSSION RULES:
 - Start with "## [${agentMap[agent]?.name ?? agent}] Round 1" as heading`;
 }
 
-function buildFollowupPrompt(
+/** @internal Exported for testing */
+export function buildFollowupPrompt(
   agent: string,
   config: DiscussionConfig,
   allPreviousRounds: RoundContribution[][],
@@ -199,7 +202,8 @@ RULES:
 - Start with "## [${agentMap[agent]?.name ?? agent}] Round ${roundNum}"`;
 }
 
-function buildSynthesisPrompt(config: DiscussionConfig, allContributions: RoundContribution[][], agentMap: Record<string, AgentConfig>): string {
+/** @internal Exported for testing */
+export function buildSynthesisPrompt(config: DiscussionConfig, allContributions: RoundContribution[][], agentMap: Record<string, AgentConfig>): string {
   const rounds = allContributions.map((round, i) =>
     round.map(c => `### ${agentMap[c.agent]?.name ?? c.agent} — Round ${i + 1}\n${c.content}`).join('\n\n'),
   ).join('\n\n---\n\n');
@@ -427,7 +431,8 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
   console.log('\n' + synthesis.content);
 }
 
-function buildFullReport(
+/** @internal Exported for testing */
+export function buildFullReport(
   config: DiscussionConfig,
   rounds: RoundContribution[][],
   synthesis: string,

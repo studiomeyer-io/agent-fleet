@@ -150,4 +150,67 @@ ${'A'.repeat(600)}
     const summary = extractSummary(content);
     expect(summary).toBe('Short.');
   });
+
+  it('truncation adds no extra chars beyond maxLength', () => {
+    const content = `## Executive Summary
+${'Word '.repeat(200)}
+
+## Details`;
+    const summary = extractSummary(content, 50);
+    expect(summary.length).toBeLessThanOrEqual(50);
+  });
+
+  it('handles empty content', () => {
+    const summary = extractSummary('');
+    expect(summary).toBe('');
+  });
+
+  it('prefers Summary over first paragraph', () => {
+    const content = `This is a long first paragraph that has more than fifty characters and would normally be picked.
+
+## Summary
+This is the actual summary.
+
+## Other section`;
+    const summary = extractSummary(content);
+    expect(summary).toBe('This is the actual summary.');
+  });
+});
+
+describe('makeFilename edge cases', () => {
+  it('date format is YYYY-MM-DD', () => {
+    const filename = makeFilename('research', 'test');
+    expect(filename).toMatch(/^\d{4}-\d{2}-\d{2}-/);
+  });
+
+  it('handles topics with only special characters', () => {
+    const filename = makeFilename('test', '!!!@@@###$$$');
+    expect(filename).toMatch(/^\d{4}-\d{2}-\d{2}-test-\.md$/);
+  });
+});
+
+describe('parseMetadata edge cases', () => {
+  it('handles nested JSON objects', () => {
+    const content = `\`\`\`json-metadata
+{
+  "total_sources": 5,
+  "nested": {"key": "value"},
+  "array": [1, 2, 3]
+}
+\`\`\``;
+    const meta = parseMetadata(content);
+    expect(meta).toEqual({
+      total_sources: 5,
+      nested: { key: 'value' },
+      array: [1, 2, 3],
+    });
+  });
+
+  it('handles metadata with extra whitespace', () => {
+    const content = `\`\`\`json-metadata
+  {  "total_sources" :  10  }
+\`\`\``;
+    const meta = parseMetadata(content);
+    expect(meta.total_sources).toBe(10);
+  });
 });

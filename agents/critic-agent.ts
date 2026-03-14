@@ -31,9 +31,10 @@ const config: AgentConfig = {
   extraTools: ['WebSearch', 'WebFetch'],
 };
 
-type CritiqueType = 'general' | 'report' | 'idea' | 'plan';
+export type CritiqueType = 'general' | 'report' | 'idea' | 'plan';
 
-function buildPrompt(type: CritiqueType, topic: string, reportContext?: string): string {
+/** @internal Exported for testing */
+export function buildPrompt(type: CritiqueType, topic: string, reportContext?: string): string {
   const baseRole = `You are the Critic Agent — a sharp, analytical Devil's Advocate.
 Your job: critically examine IDEAS and PLANS. Find weaknesses, blind spots, propose alternatives.
 You are constructively critical — every criticism comes with a BETTER suggestion.`;

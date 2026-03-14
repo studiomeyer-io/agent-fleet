@@ -17,7 +17,7 @@
 import { runAgent, type AgentConfig } from './lib/base-agent.js';
 import { pickMcp } from './lib/mcp-config.js';
 
-type ScanFocus = 'full' | 'security' | 'dead-code' | 'types' | 'errors' | 'patterns' | 'debt';
+export type ScanFocus = 'full' | 'security' | 'dead-code' | 'types' | 'errors' | 'patterns' | 'debt';
 
 const config: AgentConfig = {
   name: 'Discovery Agent',
@@ -28,7 +28,8 @@ const config: AgentConfig = {
   extraTools: ['Read', 'Glob', 'Grep', 'Bash'],
 };
 
-function buildPrompt(projectPath: string, focus: ScanFocus, quick: boolean): string {
+/** @internal Exported for testing */
+export function buildPrompt(projectPath: string, focus: ScanFocus, quick: boolean): string {
   const focusInstructions: Record<ScanFocus, string> = {
     full: `Perform a COMPLETE code scan. Check ALL categories:
 1. Dead Code (unused exports, unreachable functions, orphaned files)
