@@ -1,9 +1,15 @@
 node_modules/
 dist/
+*.js.map
 .env
-.env.local
-*.log
+.env.*
+!.env.example
 .DS_Store
+Thumbs.db
+*.log
+coverage/
+.vitest/
+*.tsbuildinfo
 reports/*.md
 reports/.partial-*.json
 !reports/.gitkeep

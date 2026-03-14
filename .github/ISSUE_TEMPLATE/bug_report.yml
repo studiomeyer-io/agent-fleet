@@ -1,0 +1,39 @@
+name: Bug Report
+description: Report a bug
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "0.1.0"
+  - type: dropdown
+    id: node
+    attributes:
+      label: Node.js Version
+      options: ["18", "20", "22"]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      render: shell
