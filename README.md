@@ -1,10 +1,21 @@
+<div align="center">
+
 # Agent Fleet
 
-[![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org) [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
+**Multi-agent orchestration for Claude Code CLI.**
 
-**Multi-agent orchestration for Claude Code CLI.** Run specialized AI agents in parallel — research, critique, analyze, fix, and discuss.
+[![npm version](https://img.shields.io/npm/v/agent-fleet?color=blue)](https://www.npmjs.com/package/agent-fleet)
+[![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
 
-Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP](https://modelcontextprotocol.io/) tool integration. Each agent is a Claude subprocess with specific tools, roles, and constraints.
+Run specialized AI agents in parallel — research, critique, analyze, fix, and discuss.<br>
+Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP](https://modelcontextprotocol.io/) tool integration.
+
+[Quick Start](#quick-start) · [Agents](#agents) · [Conductor](#conductor-multi-agent-discussion) · [Architecture](#architecture) · [Custom Agents](#creating-custom-agents)
+
+</div>
 
 ## Why Agent Fleet?
 
@@ -149,7 +160,7 @@ reports/             # Markdown reports with YAML frontmatter
 Agents use these MCP servers (all via `npx`, no local installation needed):
 
 | Server | Purpose |
-|--------|---------|
+|--------|--------|
 | `@anthropic/code-pathfinder-mcp` | Call analysis, symbol finding |
 | `@upstash/context7-mcp` | Library documentation |
 | `@nicholasarner/context-mcp` | Package search & docs |
@@ -221,4 +232,14 @@ const result = await runAgent(config, {
 
 ## License
 
-MIT — Built by [StudioMeyer](https://studiomeyer.io)
+MIT
+
+---
+
+<div align="center">
+
+Built by [StudioMeyer](https://studiomeyer.io)
+
+[AI Shield](https://github.com/studiomeyer-io/ai-shield) · [Darwin Agents](https://github.com/studiomeyer-io/darwin-agents) · [MCP Video](https://github.com/studiomeyer-io/mcp-video)
+
+</div>
