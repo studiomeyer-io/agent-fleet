@@ -21,11 +21,11 @@ Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP
 
 Most AI agent frameworks (CrewAI, AutoGen, LangGraph) treat LLMs as API endpoints — you manage tokens, tools, and prompts yourself. **Agent Fleet takes a different approach:** each agent is a full Claude Code session that can natively read files, edit code, run commands, and use MCP tools — just like a human developer.
 
-- **No API key management** — Claude Code handles authentication
+- **Dual auth** — works with your Claude subscription (personal) or API key (commercial)
 - **Native tool use** — agents read, write, and execute code directly (not through function-calling hacks)
 - **MCP ecosystem** — plug in any MCP server for web search, code analysis, GitHub, and more
 - **Parallel execution** — Conductor runs 3+ agents simultaneously, they discuss and synthesize
-- **Zero token counting** — flat-rate via Claude Max Plan
+- **No token counting** — use your existing Claude Pro/Max plan, or set `ANTHROPIC_API_KEY` for API access
 
 ---
 
@@ -227,7 +227,8 @@ const result = await runAgent(config, {
 
 - **Node.js** >= 18
 - **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`
-- **Claude Max Plan** — for flat-rate multi-agent usage (recommended)
+- **Claude Pro or Max Plan** — for personal use via Claude Code CLI
+- **Anthropic API Key** — for commercial/production use (`ANTHROPIC_API_KEY` env var)
 - **Tavily API Key** — optional, for deep web research
 
 ## License
