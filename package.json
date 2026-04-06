@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Multi-agent orchestration framework for Claude Code CLI. Research, critique, analyze, fix, and discuss — with parallel agent execution.",
   "type": "module",
+  "author": "StudioMeyer <hello@studiomeyer.io>",
   "license": "MIT",
   "repository": {
     "type": "git",
