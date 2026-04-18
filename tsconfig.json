@@ -11,6 +11,6 @@
     "isolatedModules": true,
     "outDir": "dist"
   },
-  "include": ["agents/**/*.ts"],
+  "include": ["agents/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
