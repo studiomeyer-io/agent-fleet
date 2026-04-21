@@ -85,6 +85,14 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
   const content = await new Promise<string>((resolveP, reject) => {
     const cleanEnv = { ...process.env };
     delete cleanEnv.CLAUDECODE;
+    // CRITICAL: do not pass ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN to the
+    // spawned `claude` process. With a key present the CLI talks directly
+    // to the API and bills per token — bypassing the user's Claude subscription.
+    // Opt back in for automation/CI use via AGENT_FLEET_USE_API_KEY=1.
+    if (!process.env.AGENT_FLEET_USE_API_KEY) {
+      delete cleanEnv.ANTHROPIC_API_KEY;
+      delete cleanEnv.ANTHROPIC_AUTH_TOKEN;
+    }
 
     const child = spawn('claude', args, {
       cwd: resolve(__dirname, '../..'),
@@ -107,8 +115,11 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
       if (stdout.length >= STDOUT_CAP) stdout += '\n\n[TRUNCATED: Output exceeded ' + (STDOUT_CAP / 1024) + 'KB cap]';
       if (code === 0) {
         resolveP(stdout);
-      } else if (signal === 'SIGTERM' && stdout.length > 100) {
-        resolveP(stdout);
+      } else if (signal === 'SIGTERM' && stdout.includes('## ') && stdout.length > 500) {
+        // Interrupted run — accept only if the output already looks like a
+        // real report (has a heading and ≥500 bytes). Otherwise a 100-byte
+        // partial greeting would silently pass as "success".
+        resolveP(stdout + '\n\n> ⚠️ Agent was interrupted — output may be partial\n');
       } else {
         reject(new Error(`${config.name} exited: code=${code} signal=${signal}`));
       }
