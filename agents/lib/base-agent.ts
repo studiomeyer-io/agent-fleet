@@ -87,9 +87,9 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
     delete cleanEnv.CLAUDECODE;
     // CRITICAL: do not pass ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN to the
     // spawned `claude` process. With a key present the CLI talks directly
-    // to the API and bills per token — bypassing the user's Claude subscription.
-    // Opt back in for automation/CI use via AGENT_FLEET_USE_API_KEY=1.
-    if (!process.env.AGENT_FLEET_USE_API_KEY) {
+    // to the API and bills per token — bypassing the user's Claude Pro /
+    // Max subscription. Opt back in for automation/CI via AGENT_FLEET_USE_API_KEY=1.
+    if (process.env.AGENT_FLEET_USE_API_KEY !== '1') {
       delete cleanEnv.ANTHROPIC_API_KEY;
       delete cleanEnv.ANTHROPIC_AUTH_TOKEN;
     }
@@ -115,10 +115,10 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
       if (stdout.length >= STDOUT_CAP) stdout += '\n\n[TRUNCATED: Output exceeded ' + (STDOUT_CAP / 1024) + 'KB cap]';
       if (code === 0) {
         resolveP(stdout);
-      } else if (signal === 'SIGTERM' && stdout.includes('## ') && stdout.length > 500) {
-        // Interrupted run — accept only if the output already looks like a
-        // real report (has a heading and ≥500 bytes). Otherwise a 100-byte
-        // partial greeting would silently pass as "success".
+      } else if (signal === 'SIGTERM' && stdout.length >= 500 && stdout.includes('## ')) {
+        // Interrupted run — accept only if the output has enough structured
+        // content (markdown header + ≥500 bytes) to be useful as a partial.
+        // The old `> 100` bar accepted any startup noise as success.
         resolveP(stdout + '\n\n> ⚠️ Agent was interrupted — output may be partial\n');
       } else {
         reject(new Error(`${config.name} exited: code=${code} signal=${signal}`));
@@ -271,6 +271,14 @@ export async function runDiscussionRound(
   const content = await new Promise<string>((resolveP, reject) => {
     const cleanEnv = { ...process.env };
     delete cleanEnv.CLAUDECODE;
+    // Strip Anthropic API creds so the spawned Claude CLI uses the user's
+    // paid Claude Pro / Max subscription instead of silently billing against
+    // the API key env vars. Opt back in with AGENT_FLEET_USE_API_KEY=1 for
+    // CI or server-side usage where a billed key is the intended credential.
+    if (process.env.AGENT_FLEET_USE_API_KEY !== '1') {
+      delete cleanEnv.ANTHROPIC_API_KEY;
+      delete cleanEnv.ANTHROPIC_AUTH_TOKEN;
+    }
 
     const child = spawn('claude', args, {
       cwd: resolve(__dirname, '../..'),
@@ -295,7 +303,11 @@ export async function runDiscussionRound(
       if (stdout.length >= STDOUT_CAP) stdout += '\n\n[TRUNCATED: Output exceeded ' + (STDOUT_CAP / 1024) + 'KB cap]';
       if (code === 0) {
         resolveP(stdout.trim());
-      } else if (signal === 'SIGTERM' && stdout.length > 100) {
+      } else if (signal === 'SIGTERM' && stdout.length >= 500 && stdout.includes('## ')) {
+        // Partial success: process was killed (likely timeout) but we have
+        // enough structured output to call it a real partial result. The
+        // old `> 100` bar accepted essentially any startup noise as success,
+        // which turned mid-run failures into silent "partial" completions.
         resolveP(stdout.trim());
       } else {
         reject(new Error(`${config.name} round exited: code=${code} signal=${signal}`));
