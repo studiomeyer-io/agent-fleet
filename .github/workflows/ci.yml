@@ -20,6 +20,11 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
 
-      - run: npm ci
+      # `--include=optional` pulls in the LangGraph + Postgres-checkpointer
+      # deps (added in v0.2 as opt-in). Without these, `tsc --noEmit` fails on
+      # the conductor-langgraph imports. End-users who don't want stateful
+      # mode can still install with plain `npm install` — the dynamic import
+      # in conductor-langgraph.ts gives a friendly error instead of a stack.
+      - run: npm ci --include=optional
       - run: npm run typecheck
       - run: npm test

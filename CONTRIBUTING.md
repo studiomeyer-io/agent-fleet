@@ -27,17 +27,21 @@ npm run typecheck
 ```
 agents/
   lib/
-    base-agent.ts    # Core runtime: Claude CLI subprocess + MCP + output
-    mcp-config.ts    # MCP server registry with pickMcp()
-    db.ts            # Optional PostgreSQL persistence
-  research-agent.ts  # 8 research modes
-  critic-agent.ts    # Devil's advocate
-  analyst-agent.ts   # Code analysis & health checks
-  discovery-agent.ts # Code scanning (7 focus areas)
-  repair-agent.ts    # Automated bug fixing
-  cto-agent.ts       # Live code fixes
-  conductor.ts       # Multi-agent parallel discussion
-reports/             # Generated reports (gitignored)
+    base-agent.ts            # Core runtime: Claude CLI subprocess + MCP + output
+    mcp-config.ts            # MCP server registry with pickMcp()
+    db.ts                    # Optional PostgreSQL persistence
+    langgraph-subprocess.ts  # opt-in (v0.2): LangGraph subprocess adapter
+  research-agent.ts          # 8 research modes
+  critic-agent.ts            # Devil's advocate
+  analyst-agent.ts           # Code analysis & health checks
+  discovery-agent.ts         # Code scanning (7 focus areas)
+  repair-agent.ts            # Automated bug fixing
+  cto-agent.ts               # Live code fixes
+  conductor.ts               # Multi-agent parallel discussion (v0.1)
+  conductor-langgraph.ts     # Stateful workflow + crash-resume + HITL (v0.2, opt-in)
+scripts/
+  setup-langgraph-checkpointer.ts  # idempotent schema setup (v0.2, opt-in)
+reports/                     # Generated reports (gitignored)
 ```
 
 ## How to Contribute
@@ -49,6 +53,21 @@ reports/             # Generated reports (gitignored)
 3. Define an `AgentConfig` with name, type, model, MCP servers, and tools
 4. Build a prompt and call `runAgent(config, options)`
 5. Add an npm script in `package.json`
+6. **If you want LangGraph orchestration to recognize the agent**, also:
+   - Add the worker name to the whitelist regex in `agents/lib/langgraph-subprocess.ts` (`WORKER_PATTERN`)
+   - Optionally call `emitLangGraphMarker()` at the end of your agent's `main()` so the StateGraph sees a structured run-result (the helper is no-op when `AGENT_FLEET_LANGGRAPH=1` is unset, so adding it doesn't change CLI behavior)
+
+### Adding a Custom Stateful Workflow (v0.2+)
+
+`agents/conductor-langgraph.ts` is the example workflow shipped with the repo. Copy it as a starting point:
+
+1. Define your `Annotation.Root({ ... })` state schema with reducers for each field (`workerResults: append`, `totalCost: sum`, etc.)
+2. Implement node functions — each is `async (state) => Promise<StateUpdate>` and typically calls `runWorkerSubprocess({worker, args, slug, ...})`
+3. Wire conditional routers via `addConditionalEdges(node, router, [allowedTargets])`
+4. Use `interrupt()` for Human-in-the-Loop pauses; resume via `Command({ resume: { decision } })` with the same thread_id
+5. Tests can run against `MemorySaver` instead of `PostgresSaver` for unit tests
+
+See `agents/conductor-langgraph.ts` for a concrete reference.
 
 ### Adding MCP Servers
 

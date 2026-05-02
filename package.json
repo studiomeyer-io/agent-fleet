@@ -1,7 +1,7 @@
 {
   "name": "agent-fleet",
-  "version": "0.1.0",
-  "description": "Multi-agent orchestration framework for Claude Code CLI. Research, critique, analyze, fix, and discuss — with parallel agent execution.",
+  "version": "0.2.0",
+  "description": "Multi-agent orchestration framework for Claude Code CLI. Run agents in parallel (Conductor) or stateful workflows with crash-resume + Human-in-the-Loop (Conductor-LangGraph). Subscription-flat by default.",
   "type": "module",
   "author": "StudioMeyer <hello@studiomeyer.io>",
   "license": "MIT",
@@ -32,6 +32,8 @@
     "discovery": "npx tsx agents/discovery-agent.ts",
     "repair": "npx tsx agents/repair-agent.ts",
     "conductor": "npx tsx agents/conductor.ts",
+    "conductor-langgraph": "npx tsx agents/conductor-langgraph.ts",
+    "langgraph:setup": "npx tsx scripts/setup-langgraph-checkpointer.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "npx tsc --noEmit"
@@ -40,7 +42,9 @@
     "tsx": "^4.7.0"
   },
   "optionalDependencies": {
-    "pg": "^8.13.0"
+    "pg": "^8.13.0",
+    "@langchain/langgraph": "^1.2.9",
+    "@langchain/langgraph-checkpoint-postgres": "^1.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
