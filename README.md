@@ -149,6 +149,8 @@ npm run conductor -- --sonnet "Topic"        # Use Sonnet (faster, cheaper)
 
 ```bash
 # Install LangGraph + Postgres deps (optional dependencies)
+# Note: requires Node >= 20 (transitively via @langchain/core).
+# The parallel `Conductor` mode still works on Node 18.
 npm install --include=optional
 
 # Create the langgraph schema (idempotent — safe to re-run)

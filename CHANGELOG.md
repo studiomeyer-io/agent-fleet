@@ -38,6 +38,8 @@
 
 Install with `npm install --include=optional` if you want to use the LangGraph workflow. The default `npm install` skips them — `Conductor` (parallel mode) keeps working without any LangGraph install, and `conductor-langgraph` prints a friendly install-pointer error instead of a stack trace.
 
+**Node version requirement for the LangGraph mode is Node >= 20** (transitively via `@langchain/core`'s `engines.node`). The repo's own `engines.node` stays at `>=18` because the parallel `Conductor` mode still works fine there — but if you opt into LangGraph, your runtime needs to be 20 or newer. CI matrix tests Node 20 and 22.
+
 ### Why opt-in (and not the default)
 
 The parallel `Conductor` is simpler, has no Postgres dependency, and is the right answer for most discussions, idea reviews, and quick brainstorms. The LangGraph mode is for the cases where you want to kill the workflow mid-run and resume, or pause for human approval on findings that need a real decision. Both modes share the same Claude Code CLI subprocess pattern underneath — agents don't change.

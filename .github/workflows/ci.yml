@@ -11,7 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        # Node 18 is dropped for v0.2+ because @langchain/core (transitive peer
+        # of @langchain/langgraph) requires Node >= 20 — npm silently skips
+        # the optional-deps install on Node 18 and tsc then fails on the
+        # conductor-langgraph imports. The parallel `Conductor` mode still
+        # works on Node 18 (engines.node stays ">=18"), but the LangGraph
+        # opt-in path is Node 20+.
+        node-version: [20, 22]
 
     steps:
       - uses: actions/checkout@v4
