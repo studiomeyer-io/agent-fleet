@@ -25,6 +25,10 @@ jobs:
       # the conductor-langgraph imports. End-users who don't want stateful
       # mode can still install with plain `npm install` — the dynamic import
       # in conductor-langgraph.ts gives a friendly error instead of a stack.
-      - run: npm ci --include=optional
+      #
+      # Using `npm install` instead of `npm ci` because npm ci with
+      # `--include=optional` doesn't reliably install optional deps across
+      # all node-version + npm-version combos in the matrix.
+      - run: npm install --include=optional --no-audit --no-fund
       - run: npm run typecheck
       - run: npm test
