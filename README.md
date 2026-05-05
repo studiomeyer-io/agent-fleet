@@ -21,6 +21,16 @@ Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP
 
 </div>
 
+## A note from us
+
+We have been building tools and systems for ourselves for the past two years. The fact that this repo is small and has few stars is not because it is new. It is because we only just decided to share what we have built. It is not a fresh experiment, it is a long story with a recent commit.
+
+We love building things and sharing them. We do not love social media tactics, growth hacks, or chasing stars and followers. So this repo is small. The code is real, it gets used, issues get answered. Judge for yourself.
+
+If it helps you, sharing, testing, and feedback help us. If it could be better, an issue is more useful. If you build something with it, tell us at hello@studiomeyer.io. That genuinely makes our day.
+
+From a small studio in Palma de Mallorca.
+
 ## Why Agent Fleet?
 
 Most AI agent frameworks treat LLMs as API endpoints — you manage tokens, tools, and prompts yourself. **Agent Fleet runs each agent as a full Claude Code subprocess:** native file reads, edits, command execution, and MCP tools — like a human developer would. Your subscription, no token counting.
