@@ -6,7 +6,12 @@
 
 # Agent Fleet
 
-**Multi-agent orchestration for Claude Code CLI.**
+
+<!-- badges -->
+![License](https://img.shields.io/github/license/studiomeyer-io/agent-fleet?style=flat-square&color=22c55e&label=license)
+![Last commit](https://img.shields.io/github/last-commit/studiomeyer-io/agent-fleet?style=flat-square&color=88c0d0&label=updated)
+![GitHub stars](https://img.shields.io/github/stars/studiomeyer-io/agent-fleet?style=flat-square&color=ffd700&logo=github&label=stars)
+<!-- /badges -->**Multi-agent orchestration for Claude Code CLI.**
 
 [![npm version](https://img.shields.io/npm/v/agent-fleet?color=blue)](https://www.npmjs.com/package/agent-fleet)
 [![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions)
