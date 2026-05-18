@@ -39,7 +39,7 @@
     "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
-    "tsx": "^4.7.0"
+    "tsx": "^4.22.1"
   },
   "optionalDependencies": {
     "pg": "^8.13.0",
@@ -47,10 +47,10 @@
     "@langchain/langgraph-checkpoint-postgres": "^1.0.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.8.0",
     "@types/pg": "^8.11.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.6"
   },
   "engines": {
     "node": ">=18.0.0"
