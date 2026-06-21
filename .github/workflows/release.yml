@@ -1,10 +1,7 @@
 name: Release
 
-# Cuts a GitHub Release when a v* tag is pushed. Agent Fleet is a git-clone
-# tool — the `agent-fleet` name on npm belongs to an unrelated package — so
-# there is no npm publish step. The git tag + generated release notes are the
-# distribution. The release is gated on a green tree so a bad tag never ships.
-
+# On a v* tag: verify, publish @studiomeyer-io/agent-fleet to npm with provenance,
+# then cut a GitHub Release. Requires an NPM_TOKEN secret (npm automation token).
 on:
   push:
     tags: ['v*']
@@ -21,17 +18,30 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release
+      id-token: write # npm provenance (OIDC)
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+          registry-url: https://registry.npmjs.org
           cache: npm
 
       - run: npm install --include=optional --no-audit --no-fund
-      - run: npm run check
-      - run: npm run typecheck
-      - run: npm test
+
+      # Gate the release on a green tree. `prepublishOnly` re-runs build + test
+      # on `npm publish` too, but running it here makes a failure obvious.
+      - name: Verify (build, lint, typecheck, test)
+        run: |
+          npm run build
+          npm run check
+          npm run typecheck
+          npm test
+
+      - name: Publish to npm (with provenance)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         env:

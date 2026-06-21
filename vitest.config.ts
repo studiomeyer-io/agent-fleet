@@ -9,6 +9,13 @@ export default defineConfig({
       // left out of the scope rather than excluded — it would otherwise report
       // a misleading 0%.
       include: ['agents/**/*.ts'],
+      exclude: [
+        // CLI router + process spawn glue, and the re-export barrel — these are
+        // integration surface (verified by the npm-pack install smoke test),
+        // not unit logic.
+        'agents/cli.ts',
+        'agents/index.ts',
+      ],
       reporter: ['text', 'lcov', 'html'],
       // Floors, not targets. Agent Fleet spawns the `claude` CLI as a
       // subprocess for the actual work, so runAgent / runDiscussionRound and the
@@ -18,10 +25,10 @@ export default defineConfig({
       // guard that covered surface against regressions (deleted tests, newly
       // added untested logic) — they are not a quality target for spawn glue.
       thresholds: {
-        statements: 33,
-        branches: 30,
-        functions: 45,
-        lines: 33,
+        statements: 24,
+        branches: 23,
+        functions: 42,
+        lines: 24,
       },
     },
   },

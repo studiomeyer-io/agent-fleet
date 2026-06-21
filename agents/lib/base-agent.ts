@@ -6,12 +6,16 @@
 
 import { spawn } from 'node:child_process';
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 import { saveReport, closePool } from './db.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPORTS_DIR = resolve(__dirname, '../../reports');
+// Reports go to ./reports in the current working directory so they're visible
+// whether Agent Fleet runs from a git clone or as an installed npm package
+// (where the package dir is read-only node_modules). Override with
+// AGENT_FLEET_REPORTS_DIR.
+const REPORTS_DIR = process.env.AGENT_FLEET_REPORTS_DIR
+  ? resolve(process.env.AGENT_FLEET_REPORTS_DIR)
+  : resolve(process.cwd(), 'reports');
 
 export interface AgentConfig {
   name: string;
@@ -98,7 +102,7 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
     }
 
     const child = spawn('claude', args, {
-      cwd: resolve(__dirname, '../..'),
+      cwd: process.cwd(),
       stdio: ['pipe', 'pipe', 'inherit'],
       timeout: 600_000,
       env: cleanEnv,
@@ -299,7 +303,7 @@ export async function runDiscussionRound(
     }
 
     const child = spawn('claude', args, {
-      cwd: resolve(__dirname, '../..'),
+      cwd: process.cwd(),
       stdio: ['pipe', 'pipe', 'inherit'],
       timeout,
       env: cleanEnv,

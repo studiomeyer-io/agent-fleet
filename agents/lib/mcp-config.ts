@@ -54,6 +54,9 @@ export interface McpServerConfig {
   env?: Record<string, string>;
 }
 
+/** One Tavily-key warning per process — pickMcp runs once per agent config. */
+let tavilyWarned = false;
+
 /** Pick specific MCP servers by name. Returns deep-cloned configs. */
 export function pickMcp(...names: McpServerName[]): Record<string, McpServerConfig> {
   const result: Record<string, McpServerConfig> = {};
@@ -66,8 +69,9 @@ export function pickMcp(...names: McpServerName[]): Record<string, McpServerConf
     };
   }
 
-  if (names.includes('tavily') && !process.env.TAVILY_API_KEY) {
-    console.warn('[mcp-config] WARNING: TAVILY_API_KEY is not set. Tavily MCP server will fail on API calls.');
+  if (names.includes('tavily') && !process.env.TAVILY_API_KEY && !tavilyWarned) {
+    tavilyWarned = true;
+    console.warn('[mcp-config] TAVILY_API_KEY is not set — Tavily-based agents will fail on API calls.');
   }
 
   return result;
