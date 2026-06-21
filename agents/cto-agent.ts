@@ -18,9 +18,9 @@
 
 import { runAgent, loadReportAsContext, type AgentConfig } from './lib/base-agent.js';
 import { pickMcp } from './lib/mcp-config.js';
-import { readdir } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdir } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
@@ -32,10 +32,8 @@ export function getConfig(_projectPath: string, dryRun: boolean): AgentConfig {
     type: 'cto',
     defaultModel: 'claude-opus-4-6',
     maxTurns: 50,
-    mcpServers: pickMcp('code-pathfinder', 'context'),
-    extraTools: dryRun
-      ? ['Read', 'Glob', 'Grep', 'Bash']
-      : ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash'],
+    mcpServers: pickMcp('context7'),
+    extraTools: dryRun ? ['Read', 'Glob', 'Grep', 'Bash'] : ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash'],
   };
 }
 
@@ -46,7 +44,7 @@ export function getConductorConfig(): AgentConfig {
     type: 'cto',
     defaultModel: 'claude-opus-4-6',
     maxTurns: 25,
-    mcpServers: pickMcp('code-pathfinder'),
+    mcpServers: pickMcp('context7'),
     extraTools: ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash'],
   };
 }
@@ -76,7 +74,12 @@ Test after each fix. Report what you did.`,
 }
 
 /** @internal Exported for testing */
-export function buildPrompt(projectPath: string, issue: string, reportContext: string | undefined, dryRun: boolean): string {
+export function buildPrompt(
+  projectPath: string,
+  issue: string,
+  reportContext: string | undefined,
+  dryRun: boolean,
+): string {
   const modeInstruction = dryRun
     ? `DRY RUN MODE: Create ONLY a repair plan. DO NOT modify any files!
 Show for each fix: file, line, current code, planned code.`
@@ -107,8 +110,8 @@ ${contextSection}
 
 APPROACH:
 1. **Understand** — Read package.json, README, project structure
-2. **Locate** — Use code-pathfinder (find_symbol, get_callers) and Grep to find affected code
-3. **Blast Radius** — get_callers / get_callees — who uses this function?
+2. **Locate** — Use Grep + Glob + Read to find affected code (definitions, imports, call sites)
+3. **Blast Radius** — Grep for call sites — who uses this function?
 4. **Fix** — Edit/Write for the repair. Minimal-invasive.
 5. **Verify** — Bash: \`npx tsc --noEmit\` and/or tests
 6. **Next Fix** — Repeat until done
@@ -158,10 +161,18 @@ async function main(): Promise<void> {
 
   // Determine model
   let model: string | undefined;
-  const filteredArgs = args.filter(a => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+  const filteredArgs = args.filter((a) => {
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -175,7 +186,7 @@ async function main(): Promise<void> {
 
   // Parse --dry-run
   const dryRun = filteredArgs.includes('--dry-run');
-  const remaining = filteredArgs.filter(a => a !== '--dry-run');
+  const remaining = filteredArgs.filter((a) => a !== '--dry-run');
 
   // Parse --report or --issue
   let issue = '';
@@ -185,7 +196,7 @@ async function main(): Promise<void> {
   if (reportIdx !== -1 && remaining[reportIdx + 1]) {
     const reportName = remaining[reportIdx + 1];
     const files = await readdir(REPORTS_DIR).catch(() => [] as string[]);
-    const match = files.find(f => f.includes(reportName));
+    const match = files.find((f) => f.includes(reportName));
     if (match) {
       reportContext = await loadReportAsContext(match);
       issue = `CTO Fix: ${match}`;
@@ -237,4 +248,7 @@ Examples:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

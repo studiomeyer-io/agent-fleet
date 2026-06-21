@@ -16,13 +16,13 @@ The Model Context Protocol (MCP) ecosystem has grown to 200+ public servers, wit
 
 ### 1. Ecosystem Growth
 - 200+ public MCP servers on npm/GitHub (up from ~30 in late 2025)
-- Anthropic maintains 12 official servers (code-pathfinder, github, sequential-thinking, etc.)
+- Anthropic and the MCP project maintain official reference servers (fetch, filesystem, git, sequential-thinking, etc.)
 - Community servers dominate: 85% are community-maintained
 
 ### 2. Most Popular Categories
 | Category | Count | Examples |
 |----------|-------|---------|
-| Code Analysis | 35+ | code-pathfinder, codebase-memory |
+| Code Analysis | 35+ | serena, codebase-memory |
 | Web Search | 20+ | tavily, brave-search, serper |
 | Knowledge | 15+ | context7, wikipedia, arxiv |
 | DevOps | 12+ | docker, kubernetes, terraform |

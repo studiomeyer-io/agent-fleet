@@ -6,35 +6,59 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default — no CI job needs write access to the repo.
+permissions:
+  contents: read
+
+# Cancel superseded runs on the same ref (saves minutes on rapid pushes).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  build:
+    name: lint · typecheck · test (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        # Node 18 is dropped for v0.2+ because @langchain/core (transitive peer
-        # of @langchain/langgraph) requires Node >= 20 — npm silently skips
-        # the optional-deps install on Node 18 and tsc then fails on the
-        # conductor-langgraph imports. The parallel `Conductor` mode still
-        # works on Node 18 (engines.node stays ">=18"), but the LangGraph
-        # opt-in path is Node 20+.
-        node-version: [20, 22]
+        # Node 18 and 20 are both EOL (2025-04 / 2026-03). The floor is the
+        # active LTS line. The LangGraph opt-in deps need Node >= 20, satisfied
+        # by both entries here.
+        node-version: [22, 24]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
 
-      # `--include=optional` pulls in the LangGraph + Postgres-checkpointer
-      # deps (added in v0.2 as opt-in). Without these, `tsc --noEmit` fails on
-      # the conductor-langgraph imports. End-users who don't want stateful
-      # mode can still install with plain `npm install` — the dynamic import
-      # in conductor-langgraph.ts gives a friendly error instead of a stack.
-      #
-      # Using `npm install` instead of `npm ci` because npm ci with
-      # `--include=optional` doesn't reliably install optional deps across
-      # all node-version + npm-version combos in the matrix.
+      # `--include=optional` pulls in the LangGraph + Postgres-checkpointer deps
+      # so `tsc` type-checks the conductor-langgraph path too. Using `npm install`
+      # (not `npm ci`) because `npm ci` skips optional deps unreliably across the
+      # node-version + npm-version matrix.
       - run: npm install --include=optional --no-audit --no-fund
-      - run: npm run typecheck
-      - run: npm test
+
+      - name: Lint + format check (Biome)
+        run: npm run check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test + coverage gate
+        run: npm run coverage
+
+  audit:
+    name: npm audit (high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --include=optional --no-audit --no-fund
+      # Fail only on high/critical advisories — Dependabot's grouped PRs handle
+      # the routine patch/minor churn.
+      - run: npm audit --audit-level=high

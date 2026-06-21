@@ -4,10 +4,10 @@
  * Each agent: Claude CLI subprocess + MCP tools + optional DB persistence.
  */
 
-import { spawn } from 'child_process';
-import { writeFile, mkdir, readFile } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { spawn } from 'node:child_process';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { saveReport, closePool } from './db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -68,15 +68,18 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
   });
 
   // Build allowed tools list
-  const mcpToolPatterns = Object.keys(config.mcpServers).map(name => `mcp__${name}__*`);
+  const mcpToolPatterns = Object.keys(config.mcpServers).map((name) => `mcp__${name}__*`);
   const allTools = [...mcpToolPatterns, ...config.extraTools].join(',');
 
   // Build CLI args
   const args = [
     '-p',
-    '--model', model,
-    '--max-turns', String(maxTurns),
-    '--output-format', 'text',
+    '--model',
+    model,
+    '--max-turns',
+    String(maxTurns),
+    '--output-format',
+    'text',
     ...(allTools ? ['--allowedTools', allTools] : []),
     ...(Object.keys(config.mcpServers).length > 0 ? ['--mcp-config', mcpConfig] : []),
   ];
@@ -112,14 +115,14 @@ export async function runAgent(config: AgentConfig, options: RunOptions): Promis
     child.stdout.on('error', (err) => reject(err));
     child.on('error', (err) => reject(err));
     child.on('close', (code, signal) => {
-      if (stdout.length >= STDOUT_CAP) stdout += '\n\n[TRUNCATED: Output exceeded ' + (STDOUT_CAP / 1024) + 'KB cap]';
+      if (stdout.length >= STDOUT_CAP) stdout += `\n\n[TRUNCATED: Output exceeded ${STDOUT_CAP / 1024}KB cap]`;
       if (code === 0) {
         resolveP(stdout);
       } else if (signal === 'SIGTERM' && stdout.length >= 500 && stdout.includes('## ')) {
         // Interrupted run — accept only if the output has enough structured
         // content (markdown header + ≥500 bytes) to be useful as a partial.
         // The old `> 100` bar accepted any startup noise as success.
-        resolveP(stdout + '\n\n> ⚠️ Agent was interrupted — output may be partial\n');
+        resolveP(`${stdout}\n\n> ⚠️ Agent was interrupted — output may be partial\n`);
       } else {
         reject(new Error(`${config.name} exited: code=${code} signal=${signal}`));
       }
@@ -163,17 +166,18 @@ ${cleanContent}`;
   let reportId: string | undefined;
   if (!options.dryRun) {
     try {
-      reportId = (await saveReport({
-        agentType: config.type,
-        topic: options.topic,
-        content: cleanContent,
-        summary: extractSummary(cleanContent),
-        sources: (Array.isArray(metadata.sources) ? metadata.sources : []) as string[],
-        metadata,
-        project: options.project,
-        parentReportId: options.parentReportId,
-        tags: options.tags ?? [],
-      })) ?? undefined;
+      reportId =
+        (await saveReport({
+          agentType: config.type,
+          topic: options.topic,
+          content: cleanContent,
+          summary: extractSummary(cleanContent),
+          sources: (Array.isArray(metadata.sources) ? metadata.sources : []) as string[],
+          metadata,
+          project: options.project,
+          parentReportId: options.parentReportId,
+          tags: options.tags ?? [],
+        })) ?? undefined;
     } catch {
       // DB is optional — reports still save to files
     } finally {
@@ -192,7 +196,11 @@ ${cleanContent}`;
 /** @internal Exported for testing */
 export function makeFilename(type: string, topic: string): string {
   const date = new Date().toISOString().slice(0, 10);
-  const slug = topic.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 60);
+  const slug = topic
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 60);
   return `${date}-${type}-${slug}.md`;
 }
 
@@ -205,7 +213,9 @@ export function parseMetadata(content: string): Record<string, unknown> {
   for (const pattern of patterns) {
     const match = content.match(pattern);
     if (match) {
-      try { return JSON.parse(match[1]) as Record<string, unknown>; } catch {
+      try {
+        return JSON.parse(match[1]) as Record<string, unknown>;
+      } catch {
         // Ignore malformed metadata
       }
     }
@@ -217,7 +227,7 @@ export function parseMetadata(content: string): Record<string, unknown> {
 export function extractSummary(content: string, maxLength = 500): string {
   const summaryMatch = content.match(/## (?:Executive Summary|Summary|TL;DR)\s*\n([\s\S]*?)(?=\n## |\n---|\n$)/i);
   if (summaryMatch) return summaryMatch[1].trim().slice(0, maxLength);
-  const firstPara = content.split('\n\n').find(p => p.trim().length > 50);
+  const firstPara = content.split('\n\n').find((p) => p.trim().length > 50);
   return (firstPara ?? content.slice(0, maxLength)).trim().slice(0, maxLength);
 }
 
@@ -239,7 +249,12 @@ export async function loadReportAsContext(filename: string): Promise<string> {
 export async function runDiscussionRound(
   config: AgentConfig,
   prompt: string,
-  opts?: { model?: string; maxTurns?: number; timeout?: number; onChild?: (child: import('child_process').ChildProcess) => void },
+  opts?: {
+    model?: string;
+    maxTurns?: number;
+    timeout?: number;
+    onChild?: (child: import('child_process').ChildProcess) => void;
+  },
 ): Promise<{ content: string; durationMs: number }> {
   const model = opts?.model ?? config.defaultModel;
   const maxTurns = opts?.maxTurns ?? 10;
@@ -256,14 +271,17 @@ export async function runDiscussionRound(
     ),
   });
 
-  const mcpToolPatterns = Object.keys(config.mcpServers).map(name => `mcp__${name}__*`);
+  const mcpToolPatterns = Object.keys(config.mcpServers).map((name) => `mcp__${name}__*`);
   const allTools = [...mcpToolPatterns, ...config.extraTools].join(',');
 
   const args = [
     '-p',
-    '--model', model,
-    '--max-turns', String(maxTurns),
-    '--output-format', 'text',
+    '--model',
+    model,
+    '--max-turns',
+    String(maxTurns),
+    '--output-format',
+    'text',
     ...(allTools ? ['--allowedTools', allTools] : []),
     ...(Object.keys(config.mcpServers).length > 0 ? ['--mcp-config', mcpConfig] : []),
   ];
@@ -300,7 +318,7 @@ export async function runDiscussionRound(
     child.stdout.on('error', (err) => reject(err));
     child.on('error', (err) => reject(err));
     child.on('close', (code, signal) => {
-      if (stdout.length >= STDOUT_CAP) stdout += '\n\n[TRUNCATED: Output exceeded ' + (STDOUT_CAP / 1024) + 'KB cap]';
+      if (stdout.length >= STDOUT_CAP) stdout += `\n\n[TRUNCATED: Output exceeded ${STDOUT_CAP / 1024}KB cap]`;
       if (code === 0) {
         resolveP(stdout.trim());
       } else if (signal === 'SIGTERM' && stdout.length >= 500 && stdout.includes('## ')) {

@@ -66,10 +66,9 @@ describe('repair getConfig', () => {
     }
   });
 
-  it('includes code-pathfinder and context MCP', () => {
+  it('includes the context7 MCP for library docs', () => {
     const config = repairGetConfig(false);
-    expect(config.mcpServers).toHaveProperty('code-pathfinder');
-    expect(config.mcpServers).toHaveProperty('context');
+    expect(config.mcpServers).toHaveProperty('context7');
   });
 });
 
@@ -108,9 +107,9 @@ describe('cto getConductorConfig', () => {
     expect(config.maxTurns).toBe(25);
   });
 
-  it('includes code-pathfinder MCP', () => {
+  it('includes the context7 MCP for library docs', () => {
     const config = getConductorConfig();
-    expect(config.mcpServers).toHaveProperty('code-pathfinder');
+    expect(config.mcpServers).toHaveProperty('context7');
   });
 
   it('has type "cto"', () => {
@@ -145,7 +144,7 @@ describe('cto getConductorRole', () => {
 
   it('all 4 modes return different text', () => {
     const modes = ['open', 'debate', 'review', 'improve'];
-    const roles = modes.map(m => getConductorRole(m));
+    const roles = modes.map((m) => getConductorRole(m));
     const unique = new Set(roles);
     expect(unique.size).toBe(4);
   });

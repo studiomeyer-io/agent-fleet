@@ -67,10 +67,10 @@ describe('agentRole', () => {
     expect(role).toContain('facts');
   });
 
-  it('critic open mode mentions Devil\'s Advocate', () => {
+  it("critic open mode mentions Devil's Advocate", () => {
     const role = agentRole('critic', 'open');
     expect(role).toContain('Critic');
-    expect(role).toContain('Devil\'s Advocate');
+    expect(role).toContain("Devil's Advocate");
   });
 
   it('analyst open mode mentions code', () => {
@@ -114,7 +114,7 @@ describe('buildRound1Prompt', () => {
   it('includes agent role', () => {
     const prompt = buildRound1Prompt('critic', baseConfig, mockAgentMap);
     expect(prompt).toContain('Critic');
-    expect(prompt).toContain('Devil\'s Advocate');
+    expect(prompt).toContain("Devil's Advocate");
   });
 
   it('includes Round 1 label', () => {
@@ -181,9 +181,7 @@ describe('buildFollowupPrompt', () => {
   });
 
   it('shows (none) when agent had no previous contributions', () => {
-    const partial: RoundContribution[] = [
-      { agent: 'critic', content: 'Only critic here', durationMs: 3000 },
-    ];
+    const partial: RoundContribution[] = [{ agent: 'critic', content: 'Only critic here', durationMs: 3000 }];
     const prompt = buildFollowupPrompt('research', baseConfig, [partial], 2, mockAgentMap);
     expect(prompt).toContain('(none)');
   });

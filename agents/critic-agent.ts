@@ -15,9 +15,9 @@
 
 import { runAgent, loadReportAsContext, type AgentConfig } from './lib/base-agent.js';
 import { pickMcp } from './lib/mcp-config.js';
-import { readdir } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdir } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
@@ -136,10 +136,18 @@ async function main(): Promise<void> {
 
   // Determine model
   let model: string | undefined;
-  const filteredArgs = args.filter(a => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+  const filteredArgs = args.filter((a) => {
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -151,7 +159,7 @@ async function main(): Promise<void> {
   if (filteredArgs[0] === '--report' && filteredArgs[1]) {
     type = 'report';
     const files = await readdir(REPORTS_DIR).catch(() => []);
-    const match = files.find(f => f.includes(filteredArgs[1]));
+    const match = files.find((f) => f.includes(filteredArgs[1]));
     if (match) {
       reportContext = await loadReportAsContext(match);
       topic = `Critique: ${match}`;
@@ -197,4 +205,7 @@ Options:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

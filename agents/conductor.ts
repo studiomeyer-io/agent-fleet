@@ -20,9 +20,9 @@ import { runDiscussionRound, loadReportAsContext, type AgentConfig } from './lib
 import { getConductorConfig, getConductorRole } from './cto-agent.js';
 import { saveReport, saveDiscussion, closePool } from './lib/db.js';
 import { pickMcp } from './lib/mcp-config.js';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { writeFile, mkdir, unlink } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
@@ -66,7 +66,7 @@ const agents: Record<string, AgentConfig> = {
     type: 'analyst',
     defaultModel: 'claude-opus-4-6',
     maxTurns: 10,
-    mcpServers: pickMcp('code-pathfinder', 'context'),
+    mcpServers: pickMcp('context7'),
     extraTools: ['Read', 'Glob', 'Grep', 'Bash'],
   },
 };
@@ -100,21 +100,30 @@ export function agentRole(agent: string, mode: DiscussionMode): string {
   const roles: Record<string, Record<DiscussionMode, string>> = {
     research: {
       open: 'You are the Research Agent. ACTIVELY research the topic (tavily_search, WebSearch). Deliver facts, data, market info, trends. No opinions without sources.',
-      debate: 'You are the Research Agent. Research BOTH sides of the debate. Deliver facts and data for both options. Stay neutral.',
-      review: 'You are the Research Agent. Research INDEPENDENTLY on the same topic. Compare your findings with the report. Find what\'s missing or outdated.',
-      improve: 'You are the Research Agent. Research best practices, competitors, and relevant trends. Deliver concrete improvement ideas with sources.',
+      debate:
+        'You are the Research Agent. Research BOTH sides of the debate. Deliver facts and data for both options. Stay neutral.',
+      review:
+        "You are the Research Agent. Research INDEPENDENTLY on the same topic. Compare your findings with the report. Find what's missing or outdated.",
+      improve:
+        'You are the Research Agent. Research best practices, competitors, and relevant trends. Deliver concrete improvement ideas with sources.',
     },
     critic: {
-      open: 'You are the Critic — Devil\'s Advocate. Question EVERYTHING. Find risks, blind spots, weaknesses. Every criticism needs an improvement suggestion.',
-      debate: 'You are the Critic. Check both sides\' arguments for logic errors, missing data, exaggerated claims. Who has the stronger arguments?',
-      review: 'You are the Critic. Fact check: Are the numbers correct? Are the conclusions logical? What is one-sided or outdated?',
-      improve: 'You are the Critic. Find the REAL problems, not the obvious ones. What would a customer criticize? What would go wrong? Be sharp but constructive.',
+      open: "You are the Critic — Devil's Advocate. Question EVERYTHING. Find risks, blind spots, weaknesses. Every criticism needs an improvement suggestion.",
+      debate:
+        "You are the Critic. Check both sides' arguments for logic errors, missing data, exaggerated claims. Who has the stronger arguments?",
+      review:
+        'You are the Critic. Fact check: Are the numbers correct? Are the conclusions logical? What is one-sided or outdated?',
+      improve:
+        'You are the Critic. Find the REAL problems, not the obvious ones. What would a customer criticize? What would go wrong? Be sharp but constructive.',
     },
     analyst: {
-      open: 'You are the Analyst — Code Archaeologist. Check what we ALREADY HAVE in code, infra, tools (use code-pathfinder). What can we reuse? What\'s missing technically?',
-      debate: 'You are the Analyst. Check the technical feasibility of both options. What do we already have? What would we need to build? Effort estimate.',
-      review: 'You are the Analyst. Read the code mentioned in the report. Are the technical claims correct? What\'s missing in the analysis?',
-      improve: 'You are the Analyst. Analyze the current code. Find concrete technical improvements, tech debt, quick wins.',
+      open: "You are the Analyst — Code Archaeologist. Check what we ALREADY HAVE in code, infra, tools (use Read/Glob/Grep). What can we reuse? What's missing technically?",
+      debate:
+        'You are the Analyst. Check the technical feasibility of both options. What do we already have? What would we need to build? Effort estimate.',
+      review:
+        "You are the Analyst. Read the code mentioned in the report. Are the technical claims correct? What's missing in the analysis?",
+      improve:
+        'You are the Analyst. Analyze the current code. Find concrete technical improvements, tech debt, quick wins.',
     },
   };
 
@@ -127,13 +136,17 @@ export function agentRole(agent: string, mode: DiscussionMode): string {
 // ─── Prompt Builders ──────────────────────────────────────
 
 /** @internal Exported for testing */
-export function buildRound1Prompt(agent: string, config: DiscussionConfig, agentMap: Record<string, AgentConfig>): string {
+export function buildRound1Prompt(
+  agent: string,
+  config: DiscussionConfig,
+  agentMap: Record<string, AgentConfig>,
+): string {
   const role = agentRole(agent, config.mode);
   const context = config.reportContext
     ? `\n\n--- REPORT UNDER DISCUSSION ---\n${config.reportContext}\n--- END REPORT ---\n`
     : '';
 
-  const agentNames = Object.values(agentMap).map(a => a.name);
+  const agentNames = Object.values(agentMap).map((a) => a.name);
   const agentListStr = `${agentNames.length} Agents (${agentNames.join(', ')})`;
 
   return `${role}
@@ -161,16 +174,16 @@ export function buildFollowupPrompt(
 ): string {
   const role = agentRole(agent, config.mode);
 
-  const history = allPreviousRounds.map((round, i) => {
-    const contributions = round
-      .map(c => `**${agentMap[c.agent]?.name ?? c.agent}:** ${c.content}`)
-      .join('\n\n');
-    return `### Round ${i + 1}\n${contributions}`;
-  }).join('\n\n---\n\n');
+  const history = allPreviousRounds
+    .map((round, i) => {
+      const contributions = round.map((c) => `**${agentMap[c.agent]?.name ?? c.agent}:** ${c.content}`).join('\n\n');
+      return `### Round ${i + 1}\n${contributions}`;
+    })
+    .join('\n\n---\n\n');
 
   const ownPrevious = allPreviousRounds
     .map((round, i) => {
-      const own = round.find(c => c.agent === agent);
+      const own = round.find((c) => c.agent === agent);
       return own ? `Round ${i + 1}: ${own.content}` : null;
     })
     .filter(Boolean)
@@ -203,10 +216,16 @@ RULES:
 }
 
 /** @internal Exported for testing */
-export function buildSynthesisPrompt(config: DiscussionConfig, allContributions: RoundContribution[][], agentMap: Record<string, AgentConfig>): string {
-  const rounds = allContributions.map((round, i) =>
-    round.map(c => `### ${agentMap[c.agent]?.name ?? c.agent} — Round ${i + 1}\n${c.content}`).join('\n\n'),
-  ).join('\n\n---\n\n');
+export function buildSynthesisPrompt(
+  config: DiscussionConfig,
+  allContributions: RoundContribution[][],
+  agentMap: Record<string, AgentConfig>,
+): string {
+  const rounds = allContributions
+    .map((round, i) =>
+      round.map((c) => `### ${agentMap[c.agent]?.name ?? c.agent} — Round ${i + 1}\n${c.content}`).join('\n\n'),
+    )
+    .join('\n\n---\n\n');
 
   return `You are the Synthesis Agent. Your job: Summarize the entire discussion and deliver clear results.
 
@@ -285,7 +304,7 @@ async function runRound(
     }
   }
 
-  const succeeded = contributions.filter(c => c.durationMs > 0).length;
+  const succeeded = contributions.filter((c) => c.durationMs > 0).length;
   if (succeeded < 2) {
     throw new Error(`Only ${succeeded} of ${agentNames.length} agents succeeded — discussion aborted.`);
   }
@@ -306,7 +325,7 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
   const agentNames = Object.keys(activeAgents);
   const allRounds: RoundContribution[][] = [];
 
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('CONDUCTOR — Multi-Agent Discussion');
   console.log('='.repeat(60));
   console.log(`Topic: ${config.question}`);
@@ -342,12 +361,18 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
   }
 
   // Save rounds to file BEFORE synthesis (crash protection)
-  const partialSlug = config.question.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 50);
+  const partialSlug = config.question
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 50);
   const partialFile = resolve(REPORTS_DIR, `.partial-${partialSlug}.json`);
   try {
     await mkdir(REPORTS_DIR, { recursive: true });
     await writeFile(partialFile, JSON.stringify({ config, rounds: allRounds }, null, 2), 'utf-8');
-  } catch { /* best effort */ }
+  } catch {
+    /* best effort */
+  }
 
   // Synthesis round
   console.log(`\n${'─'.repeat(50)}`);
@@ -365,11 +390,11 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
 
   let synthesis: { content: string; durationMs: number };
   try {
-    synthesis = await runDiscussionRound(
-      synthesisConfig,
-      buildSynthesisPrompt(config, allRounds, activeAgents),
-      { model: config.model, maxTurns: 3, onChild: trackChild },
-    );
+    synthesis = await runDiscussionRound(synthesisConfig, buildSynthesisPrompt(config, allRounds, activeAgents), {
+      model: config.model,
+      maxTurns: 3,
+      onChild: trackChild,
+    });
   } catch (err) {
     console.error('Synthesis failed:', (err as Error).message);
     synthesis = { content: '[Synthesis could not be created — round data saved in .partial-*.json]', durationMs: 0 };
@@ -380,7 +405,11 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
   const fullReport = buildFullReport(config, allRounds, synthesis.content, totalDuration, activeAgents);
 
   await mkdir(REPORTS_DIR, { recursive: true });
-  const slug = config.question.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').slice(0, 50);
+  const slug = config.question
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .slice(0, 50);
   const filename = `${new Date().toISOString().slice(0, 10)}-discussion-${slug}.md`;
   await writeFile(resolve(REPORTS_DIR, filename), fullReport, 'utf-8');
 
@@ -421,14 +450,14 @@ async function runDiscussion(config: DiscussionConfig): Promise<void> {
     await closePool();
   }
 
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log('DISCUSSION COMPLETE');
   console.log('='.repeat(60));
   console.log(`File: reports/${filename}`);
   console.log(`Duration: ${(totalDuration / 1000).toFixed(0)}s | ${config.rounds} rounds + synthesis`);
   console.log('='.repeat(60));
 
-  console.log('\n' + synthesis.content);
+  console.log(`\n${synthesis.content}`);
 }
 
 /** @internal Exported for testing */
@@ -457,10 +486,12 @@ duration: ${(totalDurationMs / 1000).toFixed(0)}s
 
 `;
 
-  const roundSections = rounds.map((round, i) => {
-    const contributions = round.map(c => c.content).join('\n\n');
-    return `# Round ${i + 1}\n\n${contributions}`;
-  }).join('\n\n---\n\n');
+  const roundSections = rounds
+    .map((round, i) => {
+      const contributions = round.map((c) => c.content).join('\n\n');
+      return `# Round ${i + 1}\n\n${contributions}`;
+    })
+    .join('\n\n---\n\n');
 
   const synthSection = `\n\n---\n\n# Synthesis\n\n${synthesis}`;
 
@@ -482,15 +513,25 @@ async function main(): Promise<void> {
   const remaining: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--debate') { mode = 'debate'; }
-    else if (arg === '--review') { mode = 'review'; }
-    else if (arg === '--improve') { mode = 'improve'; }
-    else if (arg === '--sonnet') { model = 'claude-sonnet-4-6'; }
-    else if (arg === '--haiku') { model = 'claude-haiku-4-5-20251001'; }
-    else if (arg === '--opus') { /* default */ }
-    else if (arg === '--with-cto' || arg === '--cto') { withCto = true; }
-    else if (arg === '--rounds' && args[i + 1]) { rounds = parseInt(args[++i], 10) || 2; }
-    else if (!arg.startsWith('--')) { remaining.push(arg); }
+    if (arg === '--debate') {
+      mode = 'debate';
+    } else if (arg === '--review') {
+      mode = 'review';
+    } else if (arg === '--improve') {
+      mode = 'improve';
+    } else if (arg === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+    } else if (arg === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+    } else if (arg === '--opus') {
+      /* default */
+    } else if (arg === '--with-cto' || arg === '--cto') {
+      withCto = true;
+    } else if (arg === '--rounds' && args[i + 1]) {
+      rounds = parseInt(args[++i], 10) || 2;
+    } else if (!arg.startsWith('--')) {
+      remaining.push(arg);
+    }
   }
 
   question = remaining.join(' ');
@@ -529,4 +570,7 @@ Each round runs in parallel — agents discuss simultaneously.`);
   await runDiscussion({ mode, question, rounds, model, reportContext, withCto });
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

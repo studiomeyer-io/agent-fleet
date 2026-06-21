@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: 'If you use Agent Fleet in your work, please cite it as below.'
+title: Agent Fleet
+abstract: >-
+  Multi-agent orchestration framework for the Claude Code CLI. Runs specialized
+  AI agents in parallel rounds (Conductor) or as stateful workflows with
+  Postgres-backed crash-resume and Human-in-the-Loop (Conductor-LangGraph).
+type: software
+authors:
+  - name: StudioMeyer
+    website: 'https://studiomeyer.io'
+    email: hello@studiomeyer.io
+repository-code: 'https://github.com/studiomeyer-io/agent-fleet'
+url: 'https://github.com/studiomeyer-io/agent-fleet'
+license: MIT
+keywords:
+  - ai-agents
+  - claude
+  - claude-code
+  - multi-agent
+  - mcp
+  - orchestration

@@ -210,7 +210,6 @@ describe('isMarkerConsistent', () => {
   });
 });
 
-
 // ─── runWorkerSubprocess input validation (no spawn) ─────────────
 //
 // These exercise the guard clauses that run BEFORE any `spawn()` — invalid
@@ -220,34 +219,26 @@ describe('isMarkerConsistent', () => {
 
 describe('runWorkerSubprocess input validation', () => {
   it('rejects an unknown worker without spawning', async () => {
-    await expect(
-      runWorkerSubprocess({ worker: 'totally-fake-agent', args: [] }),
-    ).rejects.toThrow(/Invalid worker/);
+    await expect(runWorkerSubprocess({ worker: 'totally-fake-agent', args: [] })).rejects.toThrow(/Invalid worker/);
   });
 
   it('rejects the bare "research" name (missing -agent suffix)', async () => {
     // The single most likely forker mistake — copying `worker: 'research'`.
-    await expect(
-      runWorkerSubprocess({ worker: 'research', args: [] }),
-    ).rejects.toThrow(/Invalid worker/);
+    await expect(runWorkerSubprocess({ worker: 'research', args: [] })).rejects.toThrow(/Invalid worker/);
   });
 
   it('rejects a path-traversal worker name without spawning', async () => {
-    await expect(
-      runWorkerSubprocess({ worker: '../../etc/passwd', args: [] }),
-    ).rejects.toThrow(/Invalid worker/);
+    await expect(runWorkerSubprocess({ worker: '../../etc/passwd', args: [] })).rejects.toThrow(/Invalid worker/);
   });
 
   it('rejects a path-traversal slug without spawning', async () => {
-    await expect(
-      runWorkerSubprocess({ worker: 'research-agent', args: [], slug: '../escape' }),
-    ).rejects.toThrow(/Invalid slug/);
+    await expect(runWorkerSubprocess({ worker: 'research-agent', args: [], slug: '../escape' })).rejects.toThrow(
+      /Invalid slug/,
+    );
   });
 
   it('rejects an empty slug when one is explicitly passed', async () => {
-    await expect(
-      runWorkerSubprocess({ worker: 'research-agent', args: [], slug: '' }),
-    ).rejects.toThrow(/Invalid slug/);
+    await expect(runWorkerSubprocess({ worker: 'research-agent', args: [], slug: '' })).rejects.toThrow(/Invalid slug/);
   });
 
   it('returns a rejected Promise (not a synchronous throw) on bad input', () => {

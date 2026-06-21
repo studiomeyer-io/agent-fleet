@@ -3,7 +3,7 @@
  * Repair Agent — Automated Bug Fixer
  *
  * Takes Discovery Agent findings (or manual issue descriptions) and fixes them.
- * Uses code-pathfinder for call analysis and context for library docs.
+ * Uses Read/Glob/Grep for call analysis and context7 for library docs.
  *
  * Usage:
  *   npx tsx agents/repair-agent.ts --project /path/to/project --report <discovery-report>
@@ -14,9 +14,9 @@
 
 import { runAgent, loadReportAsContext, type AgentConfig } from './lib/base-agent.js';
 import { pickMcp } from './lib/mcp-config.js';
-import { readdir } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdir } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
@@ -28,15 +28,18 @@ export function getConfig(dryRun: boolean): AgentConfig {
     type: 'repair',
     defaultModel: 'claude-opus-4-6',
     maxTurns: 40,
-    mcpServers: pickMcp('code-pathfinder', 'context'),
-    extraTools: dryRun
-      ? ['Read', 'Glob', 'Grep', 'Bash']
-      : ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash'],
+    mcpServers: pickMcp('context7'),
+    extraTools: dryRun ? ['Read', 'Glob', 'Grep', 'Bash'] : ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash'],
   };
 }
 
 /** @internal Exported for testing */
-export function buildPrompt(projectPath: string, issue: string, reportContext: string | undefined, dryRun: boolean): string {
+export function buildPrompt(
+  projectPath: string,
+  issue: string,
+  reportContext: string | undefined,
+  dryRun: boolean,
+): string {
   const modeInstruction = dryRun
     ? `DRY RUN MODE: Create ONLY a repair plan. DO NOT modify any files!
 Show for each fix: file, line, current code, planned code.`
@@ -66,9 +69,9 @@ ${contextSection}
 
 APPROACH:
 1. **Understand** — Read project structure, package.json, README
-2. **Locate** — Use code-pathfinder (find_symbol, get_callers) and Grep to find affected code
-3. **Analyze** — get_callers / get_callees to understand blast radius
-4. **Check Docs** — context tools (get_docs, search_packages) for library-specific fixes
+2. **Locate** — Use Grep + Glob + Read to find affected code (definitions, imports, call sites)
+3. **Analyze** — Grep for call sites to understand the blast radius
+4. **Check Docs** — context7 (resolve-library-id, get-library-docs) for library-specific fixes
 5. **Fix** — Edit/Write for the actual repair
 6. **Verify** — Bash for typecheck (\`npx tsc --noEmit\`) and tests
 
@@ -127,10 +130,18 @@ async function main(): Promise<void> {
 
   // Determine model
   let model: string | undefined;
-  const filteredArgs = args.filter(a => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+  const filteredArgs = args.filter((a) => {
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -144,7 +155,7 @@ async function main(): Promise<void> {
 
   // Parse --dry-run
   const dryRun = filteredArgs.includes('--dry-run');
-  const remaining = filteredArgs.filter(a => a !== '--dry-run');
+  const remaining = filteredArgs.filter((a) => a !== '--dry-run');
 
   // Parse --report or --issue
   let issue = '';
@@ -154,7 +165,7 @@ async function main(): Promise<void> {
   if (reportIdx !== -1 && remaining[reportIdx + 1]) {
     const reportName = remaining[reportIdx + 1];
     const files = await readdir(REPORTS_DIR).catch(() => [] as string[]);
-    const match = files.find(f => f.includes(reportName));
+    const match = files.find((f) => f.includes(reportName));
     if (match) {
       reportContext = await loadReportAsContext(match);
       issue = `Repair: ${match}`;
@@ -207,4 +218,7 @@ Examples:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
