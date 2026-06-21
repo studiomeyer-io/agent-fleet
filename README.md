@@ -74,6 +74,12 @@ claude auth login                          # Authenticate
 git clone https://github.com/studiomeyer-io/agent-fleet.git
 cd agent-fleet
 npm install
+# For the opt-in LangGraph stateful mode, also pull the optional deps (Node >= 20):
+#   npm install --include=optional
+
+# Verify the clone works before wiring in agents
+npm run typecheck
+npm test
 
 # Optional: Copy and configure .env
 cp .env.example .env

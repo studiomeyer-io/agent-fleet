@@ -1,5 +1,42 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **`runWorkerSubprocess` docs no longer steer forkers into a rejected call.** The
+  module-level JSDoc example showed `worker: 'research'`, but `runWorkerSubprocess`
+  validates the name against `WORKER_PATTERN` (which requires the `-agent` suffix)
+  and maps it to `agents/<worker>.ts`. Copying the example verbatim threw
+  `Invalid worker "research"`. The example now uses `worker: 'research-agent'` with
+  a note on the naming rule.
+- **`assertValidWorker` error message stopped advertising a value it rejects.** It
+  listed `...|repair|conductor)-agent` even though `conductor` is intentionally not a
+  spawnable worker (there is a test asserting it is rejected). The message now lists
+  only the six real workers and explains that `conductor` is the orchestrator.
+- **CHANGELOG/CI consistency:** the 0.2.0 note claimed CI installs with
+  `npm ci --include=optional`; the workflow actually uses `npm install --include=optional`
+  (npm ci skipped optional deps unreliably across the matrix). Corrected.
+
+### Added
+
+- **Test coverage on the orchestration core** (165 -> 201 -> **220** tests):
+  - `runWorkerSubprocess` input-validation: invalid worker / bare `research` /
+    path-traversal worker / path-traversal slug / empty slug all **reject the
+    returned Promise before any `spawn()`** (fast, side-effect free).
+  - `WorkerSubprocessError` shape: `Error` subclass, `name`/`worker`/`result` preserved.
+  - `detectHighRisk` (the Human-in-the-Loop routing gate) — `CRITICAL` + `HIGH`-as-marker
+    matching, and the false-positive guards (`highest`, `highlight` must NOT trigger a pause).
+  - `recordWorkerRun` sub-agent outcome -> status mapping — `ok`/`error`/`timeout`,
+    including timeout-wins-over-stale-exit-code and null-exit-without-timeout -> `error`.
+  - `detectHighRisk` and `recordWorkerRun` are now exported (`@internal`) for direct unit testing.
+
+### Docs
+
+- **Quick Start** now shows the verify step (`npm run typecheck` + `npm test`) and notes
+  the optional `--include=optional` install for LangGraph mode, so a fresh clone can confirm
+  it works before wiring in agents.
+
 ## 0.2.0 (2026-05-02)
 
 **Stateful workflows with LangGraph — opt-in, no breaking changes.**
@@ -29,7 +66,7 @@
 - **`tests/conductor-langgraph.test.ts`** — 6 integration tests that compile the `StateGraph` against `MemorySaver` (no Postgres needed) and mock `runWorkerSubprocess` to exercise the routers end-to-end: happy path, HITL-pause on high-risk, research-failure path, timeout path, and the append-only state-reducer guarantees.
 - Total: 165 → 201 tests, all green.
 - **`npm run conductor-langgraph`** + **`npm run langgraph:setup`** scripts in `package.json`.
-- CI workflow now installs with `npm ci --include=optional` so the LangGraph code path is type-checked and tested in CI as well.
+- CI workflow now installs with `npm install --include=optional` so the LangGraph code path is type-checked and tested in CI as well. (`npm ci` skipped optional deps unreliably across the Node-version matrix.)
 - `tsconfig.json` `include` extended with `scripts/**/*.ts` so the setup script is type-checked too.
 
 ### Optional Dependencies

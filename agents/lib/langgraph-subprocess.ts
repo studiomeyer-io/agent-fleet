@@ -21,8 +21,11 @@
  *
  *   import { runWorkerSubprocess } from './langgraph-subprocess.js';
  *
+ *   // `worker` is the script basename WITHOUT `.ts` — it must include the
+ *   // `-agent` suffix (it maps to `agents/<worker>.ts` and is validated against
+ *   // WORKER_PATTERN). Use 'research-agent', not 'research'.
  *   const result = await runWorkerSubprocess({
- *     worker: 'research',
+ *     worker: 'research-agent',
  *     args: ['--tech', 'Model Context Protocol'],
  *     timeoutMs: 10 * 60_000,
  *   });
@@ -126,7 +129,8 @@ export function assertValidWorker(worker: string): void {
   }
   if (!WORKER_PATTERN.test(worker)) {
     throw new Error(
-      `Invalid worker "${worker}": must match (research|critic|analyst|cto|discovery|repair|conductor)-agent`,
+      `Invalid worker "${worker}": must match (research|critic|analyst|cto|discovery|repair)-agent ` +
+        `(conductor is the orchestrator, not a spawnable worker)`,
     );
   }
 }

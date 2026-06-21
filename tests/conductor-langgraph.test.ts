@@ -14,6 +14,8 @@ import { MemorySaver, START, END } from '@langchain/langgraph';
 import * as subprocessMod from '../agents/lib/langgraph-subprocess.js';
 import {
   buildAgentFleetWorkflow,
+  detectHighRisk,
+  recordWorkerRun,
   type FleetState,
 } from '../agents/conductor-langgraph.js';
 import type { RunWorkerResult } from '../agents/lib/langgraph-subprocess.js';
@@ -227,5 +229,86 @@ describe('conductor-langgraph state reducers', () => {
     // critic errored, workflow ends (no analyst)
     expect(finalState.errors.length).toBeGreaterThan(0);
     expect(finalState.errors.some((e) => e.worker === 'critic')).toBe(true);
+  });
+});
+
+
+// ─── detectHighRisk: the HITL routing gate (pure function) ───────
+//
+// This heuristic decides whether the workflow PAUSES for human approval.
+// A false negative silently skips review of a genuinely risky finding; a
+// false positive pauses needlessly. The regex deliberately matches HIGH
+// only as a level-marker (HIGH:, HIGH-, "HIGH risk") and not inside words
+// like "highest" / "highlight", so those edges are worth pinning.
+
+describe('detectHighRisk', () => {
+  it('returns false for empty / undefined input', () => {
+    expect(detectHighRisk(undefined)).toBe(false);
+    expect(detectHighRisk('')).toBe(false);
+  });
+
+  it('flags CRITICAL findings (case-insensitive)', () => {
+    expect(detectHighRisk('## CRITICAL: API key leakage in env')).toBe(true);
+    expect(detectHighRisk('found a critical bug')).toBe(true);
+  });
+
+  it('flags HIGH used as a level marker', () => {
+    expect(detectHighRisk('Risk level: HIGH')).toBe(false); // no trailing marker char
+    expect(detectHighRisk('Severity HIGH: data loss')).toBe(true); // "HIGH:"
+    expect(detectHighRisk('this is HIGH-risk territory')).toBe(true); // "HIGH-"
+    expect(detectHighRisk('rated HIGH risk by the critic')).toBe(true); // "HIGH "
+  });
+
+  it('does NOT match HIGH inside ordinary words', () => {
+    expect(detectHighRisk('this is the highest priority item')).toBe(false);
+    expect(detectHighRisk('please highlight the summary')).toBe(false);
+    expect(detectHighRisk('a high-quality, low-risk plan')).toBe(true); // "high-" still a marker
+  });
+
+  it('returns false for a clean low-risk summary', () => {
+    expect(detectHighRisk('all looks fine, low risk overall')).toBe(false);
+  });
+});
+
+// ─── recordWorkerRun: sub-agent outcome → status mapping ─────────
+//
+// The status field drives both the audit trail and (via researchDone /
+// criticDone) the routers. timeout must win over a stale exitCode, and a
+// non-zero exit must map to 'error' — these are the failure-handling cases.
+
+describe('recordWorkerRun', () => {
+  const started = '2026-01-01T00:00:00.000Z';
+
+  it('maps a clean exit (code 0) to "ok"', () => {
+    const r = recordWorkerRun('research', 0, 1500, false, started);
+    expect(r).toEqual({
+      worker: 'research',
+      status: 'ok',
+      exitCode: 0,
+      durationMs: 1500,
+      startedAt: started,
+    });
+  });
+
+  it('maps a non-zero exit to "error"', () => {
+    expect(recordWorkerRun('critic', 1, 900, false, started).status).toBe('error');
+    expect(recordWorkerRun('critic', 2, 900, false, started).status).toBe('error');
+  });
+
+  it('maps a timeout to "timeout" even when exitCode is null', () => {
+    const r = recordWorkerRun('analyst', null, 720_000, true, started);
+    expect(r.status).toBe('timeout');
+    expect(r.exitCode).toBeNull();
+  });
+
+  it('treats timeout as authoritative over a stale exit code', () => {
+    // If both timedOut and a code are reported, timeout wins (the kill is
+    // why the process exited at all).
+    expect(recordWorkerRun('analyst', 0, 1, true, started).status).toBe('timeout');
+  });
+
+  it('maps a null exit code without timeout to "error"', () => {
+    // Process died on a signal but not from our timeout — still a failure.
+    expect(recordWorkerRun('repair', null, 50, false, started).status).toBe('error');
   });
 });
