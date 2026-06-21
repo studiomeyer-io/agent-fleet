@@ -165,7 +165,8 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function recordWorkerRun(
+/** @internal Exported for testing */
+export function recordWorkerRun(
   worker: string,
   exitCode: number | null,
   durationMs: number,
@@ -186,8 +187,10 @@ function recordWorkerRun(
  * findings. The Critic agent emits these as level-headers in its report
  * (e.g. "## CRITICAL: API key leakage"). A real production setup might
  * parse a structured field — for the example workflow this is enough.
+ *
+ * @internal Exported for testing
  */
-function detectHighRisk(text: string | undefined): boolean {
+export function detectHighRisk(text: string | undefined): boolean {
   if (!text) return false;
   // Match HIGH/CRITICAL as a level marker (after a colon, in a heading,
   // or as a standalone token). Avoid false positives on words like "highest".
