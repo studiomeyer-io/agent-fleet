@@ -51,8 +51,7 @@
 - **Biome 2.5** (lint + format) — `biome.json` (recommended preset, single-quote
   TS style), `npm run check` / `check:fix` / `lint` / `format`, enforced in CI.
 - **Vitest coverage gate** — `vitest.config.ts` with `@vitest/coverage-v8` and
-  regression-floor thresholds (lines/statements 33, branches 30, functions 45),
-  `npm run coverage`, wired into CI.
+  regression-floor thresholds, `npm run coverage`, wired into CI.
 - **CodeQL** static analysis workflow (`javascript-typescript`, `build-mode: none`).
 - **OpenSSF Scorecard** workflow + README badge (matches the rest of the
   studiomeyer-io OSS fleet).
