@@ -1,6 +1,33 @@
 # Changelog
 
-## [Unreleased]
+## 0.3.0 (2026-06-21)
+
+**First release on npm as `@studiomeyer-io/agent-fleet`.**
+
+### Added — npm distribution
+
+- **Published to npm as `@studiomeyer-io/agent-fleet`** — `npx @studiomeyer-io/agent-fleet <command>`
+  or `npm i -g`. (The unscoped `agent-fleet` name on npm belongs to an unrelated package.)
+- **`agent-fleet` CLI** (`bin`) routing to every agent — `agent-fleet conductor`,
+  `agent-fleet research --tech "..."`, etc. Compiled to `dist/` with `tsc`
+  (`npm run build`; `prepublishOnly` gates publish on build + lint + typecheck + test).
+- **`isEntrypoint` guard on every agent's `main()`** — importing one agent from
+  another (the conductor imports the cto agent for its config) or from a test no
+  longer kicks off a second agent's CLI. Fixes `agent-fleet conductor` printing the
+  CTO usage.
+- **Reports write to `./reports` in the current working directory** (was the package
+  dir, unwritable under `node_modules`). Override with `AGENT_FLEET_REPORTS_DIR`.
+- **LangGraph worker spawns auto-detect** compiled (`node dist/agents/*.js`) vs
+  git-clone (`npx tsx agents/*.ts`) mode.
+- **Library entry** — `import { runAgent, pickMcp } from '@studiomeyer-io/agent-fleet'`.
+- **Release workflow** publishes to npm with provenance (OIDC) and cuts a GitHub
+  Release on a `v*` tag.
+
+### Changed
+
+- **`pg` + LangGraph are now optional `peerDependencies`** — installed only if you
+  use the DB persistence / stateful mode, keeping the default install lean.
+- The Tavily-key warning now fires once per process instead of once per agent config.
 
 ### Security & Correctness
 

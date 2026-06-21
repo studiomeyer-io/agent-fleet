@@ -13,6 +13,7 @@
 ![GitHub stars](https://img.shields.io/github/stars/studiomeyer-io/agent-fleet?style=flat-square&color=ffd700&logo=github&label=stars)
 <!-- /badges -->**Multi-agent orchestration for Claude Code CLI.**
 
+[![npm](https://img.shields.io/npm/v/@studiomeyer-io/agent-fleet?color=blue&logo=npm)](https://www.npmjs.com/package/@studiomeyer-io/agent-fleet)
 [![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/codeql.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/studiomeyer-io/agent-fleet/badge)](https://scorecard.dev/viewer/?uri=github.com/studiomeyer-io/agent-fleet)
@@ -67,27 +68,30 @@ Most AI agent frameworks treat LLMs as API endpoints — you manage tokens, tool
 ## Quick Start
 
 ```bash
-# Prerequisites
-npm install -g @anthropic-ai/claude-code  # Claude Code CLI
-claude auth login                          # Authenticate
+# 1. Install the Claude Code CLI — the agents run as Claude subprocesses
+npm install -g @anthropic-ai/claude-code
+claude auth login
 
-# Setup
-git clone https://github.com/studiomeyer-io/agent-fleet.git
-cd agent-fleet
-npm install
-# For the opt-in LangGraph stateful mode, also pull the optional deps:
-#   npm install --include=optional
+# 2. Run an agent — no install needed
+npx @studiomeyer-io/agent-fleet conductor "Should we migrate to a monorepo?"
+npx @studiomeyer-io/agent-fleet research --tech "Model Context Protocol"
 
-# Verify the clone works before wiring in agents
-npm run check       # Biome lint + format check
-npm run typecheck
-npm test
-
-# Optional: Copy and configure .env
-cp .env.example .env
+# ...or install it
+npm install -g @studiomeyer-io/agent-fleet
+agent-fleet conductor --debate "PostgreSQL vs SQLite"
 ```
 
+Reports are written to `./reports` in the current directory. For the opt-in
+LangGraph stateful mode, also install the optional peers:
+`npm install @langchain/langgraph @langchain/langgraph-checkpoint-postgres pg`.
+
+Hacking on the agents themselves? See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+git-clone + `tsx` dev workflow.
+
 ## Usage
+
+> **Installed via npm?** Use `agent-fleet <command>` — e.g. `agent-fleet research --tech "..."`.
+> The `npm run <command> --` form below is the equivalent from a git clone.
 
 ### Individual Agents
 

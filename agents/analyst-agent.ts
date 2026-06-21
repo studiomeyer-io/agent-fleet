@@ -13,6 +13,7 @@
  */
 
 import { runAgent, type AgentConfig } from './lib/base-agent.js';
+import { isEntrypoint } from './lib/entrypoint.js';
 import { pickMcp } from './lib/mcp-config.js';
 
 const config: AgentConfig = {
@@ -193,7 +194,9 @@ Options:
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (isEntrypoint(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

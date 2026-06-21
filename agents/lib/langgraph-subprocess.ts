@@ -40,11 +40,17 @@
  */
 
 import { spawn, type ChildProcess } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../..');
+
+// When this module runs from the compiled npm package its path contains
+// `/dist/`, and the workers next to it are `.js` run by `node`. From a git
+// clone (tsx) the workers are `.ts` run via `npx tsx`. REPO_ROOT is the spawn
+// cwd in both cases (the package's `dist/` dir, or the repo root).
+const RUNNING_COMPILED = __dirname.includes(`${sep}dist${sep}`);
 
 /** Stdout-marker sentinels for the structured worker-result block. */
 export const LANGGRAPH_RESULT_BEGIN_MARKER = '__AGENT_FLEET_LANGGRAPH_RESULT_BEGIN__';
@@ -165,7 +171,7 @@ export function runWorkerSubprocess(opts: {
     return Promise.reject(err);
   }
 
-  const scriptRel = `agents/${opts.worker}.ts`;
+  const scriptRel = `agents/${opts.worker}${RUNNING_COMPILED ? '.js' : '.ts'}`;
   const timeoutMs = opts.timeoutMs ?? 10 * 60_000;
   const started = Date.now();
 
@@ -185,9 +191,14 @@ export function runWorkerSubprocess(opts: {
     env.AGENT_FLEET_LANGGRAPH = '1'; // Worker checks this to emit the marker
     if (opts.dryRun) env.AGENT_FLEET_DRY_RUN = '1';
 
+    // Compiled package: `node dist/agents/<worker>.js`. Git clone: `npx tsx
+    // agents/<worker>.ts` (tsx is a dev dependency, present in a clone).
+    const spawnCmd = RUNNING_COMPILED ? 'node' : 'npx';
+    const spawnArgs = RUNNING_COMPILED ? [scriptRel, ...opts.args] : ['tsx', scriptRel, ...opts.args];
+
     let child: ChildProcess;
     try {
-      child = spawn('npx', ['tsx', scriptRel, ...opts.args], {
+      child = spawn(spawnCmd, spawnArgs, {
         cwd: REPO_ROOT,
         env,
         stdio: ['ignore', 'pipe', 'pipe'],
