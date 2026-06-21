@@ -38,10 +38,24 @@ jobs:
           npm run typecheck
           npm test
 
+      # Token-optional + idempotent: skip cleanly if NPM_TOKEN isn't set (e.g.
+      # the version was published manually), and treat an already-published
+      # version as success so re-tagging never turns the run red.
       - name: Publish to npm (with provenance)
-        run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "No NPM_TOKEN secret set — skipping npm publish."
+            exit 0
+          fi
+          if npm publish --provenance --access public 2>&1 | tee /tmp/pub.log; then
+            echo "published"
+          elif grep -qiE "cannot publish over|previously published|EPUBLISHCONFLICT|403 Forbidden" /tmp/pub.log; then
+            echo "this version is already on npm — treating as success"
+          else
+            exit 1
+          fi
 
       - name: Create GitHub Release
         env:
