@@ -214,13 +214,7 @@ async function researchNode(state: FleetState): Promise<FleetStateUpdate> {
     pipe: true,
   });
 
-  const wr = recordWorkerRun(
-    'research',
-    runResult.exitCode,
-    runResult.durationMs,
-    runResult.timedOut,
-    startedAt,
-  );
+  const wr = recordWorkerRun('research', runResult.exitCode, runResult.durationMs, runResult.timedOut, startedAt);
   const consistentMarker = isMarkerConsistent(runResult.markerResult, 'research-agent', state.slug)
     ? runResult.markerResult
     : null;
@@ -272,13 +266,7 @@ async function criticNode(state: FleetState): Promise<FleetStateUpdate> {
     pipe: true,
   });
 
-  const wr = recordWorkerRun(
-    'critic',
-    runResult.exitCode,
-    runResult.durationMs,
-    runResult.timedOut,
-    startedAt,
-  );
+  const wr = recordWorkerRun('critic', runResult.exitCode, runResult.durationMs, runResult.timedOut, startedAt);
   const consistentMarker = isMarkerConsistent(runResult.markerResult, 'critic-agent', state.slug)
     ? runResult.markerResult
     : null;
@@ -320,13 +308,7 @@ async function analystNode(state: FleetState): Promise<FleetStateUpdate> {
     pipe: true,
   });
 
-  const wr = recordWorkerRun(
-    'analyst',
-    runResult.exitCode,
-    runResult.durationMs,
-    runResult.timedOut,
-    startedAt,
-  );
+  const wr = recordWorkerRun('analyst', runResult.exitCode, runResult.durationMs, runResult.timedOut, startedAt);
   const consistentMarker = isMarkerConsistent(runResult.markerResult, 'analyst-agent', state.slug)
     ? runResult.markerResult
     : null;
@@ -363,13 +345,14 @@ function userApprovalNode(state: FleetState): FleetStateUpdate {
   // LangGraph 1.x: `interrupt<I, R>(value: I): R`. First generic = the value
   // we hand TO interrupt() (shown to the user); second generic = the resume
   // value we get BACK (delivered via `Command({ resume: { decision } })`).
-  const userInput = interrupt<
-    { approvalReason: string; state: FleetState },
-    { decision: UserDecision }
-  >({ approvalReason: reason, state });
+  const userInput = interrupt<{ approvalReason: string; state: FleetState }, { decision: UserDecision }>({
+    approvalReason: reason,
+    state,
+  });
 
   const decision: UserDecision =
-    userInput && (userInput.decision === 'approve' || userInput.decision === 'reject' || userInput.decision === 'revise')
+    userInput &&
+    (userInput.decision === 'approve' || userInput.decision === 'reject' || userInput.decision === 'revise')
       ? userInput.decision
       : 'reject';
 
@@ -507,12 +490,12 @@ Requires:
   } catch (err) {
     const msg = (err as Error).message ?? '';
     const isIdempotentRetryable =
-      msg.includes('already exists') ||
-      msg.includes('duplicate') ||
-      msg.includes('ERROR_DUPLICATE');
+      msg.includes('already exists') || msg.includes('duplicate') || msg.includes('ERROR_DUPLICATE');
     if (!isIdempotentRetryable) {
       console.error(`[langgraph] Checkpointer setup failed: ${msg}`);
-      console.error(`[langgraph] Run \`npx tsx scripts/setup-langgraph-checkpointer.ts\` separately and check DB connectivity.`);
+      console.error(
+        `[langgraph] Run \`npx tsx scripts/setup-langgraph-checkpointer.ts\` separately and check DB connectivity.`,
+      );
       throw err;
     }
   }
@@ -536,7 +519,9 @@ Requires:
     console.log(`  Worker runs:        ${state.workerResults.length}`);
     console.log(`  Errors:             ${state.errors.length}`);
     console.log(`  User decision:      ${state.userDecision ?? '(none)'}`);
-    console.log(`  Next nodes:         ${snapshot.next.length > 0 ? snapshot.next.join(', ') : '(none — workflow complete or interrupted)'}`);
+    console.log(
+      `  Next nodes:         ${snapshot.next.length > 0 ? snapshot.next.join(', ') : '(none — workflow complete or interrupted)'}`,
+    );
     if (snapshot.tasks.some((t) => t.interrupts && t.interrupts.length > 0)) {
       const interrupts = snapshot.tasks.flatMap((t) => t.interrupts ?? []);
       console.log(`  ⏸️ INTERRUPTED: ${interrupts.length} interrupt(s) waiting`);
@@ -558,23 +543,17 @@ Requires:
     // upstream via the `interrupt<I, R>(...)` call site. The runtime cast on
     // `decision` validates the payload shape before serialization.
     const resumePayload: { decision: UserDecision } = { decision: decision as UserDecision };
-    result = (await graph.invoke(
-      new Command({ resume: resumePayload }),
-      config,
-    )) as FleetState;
+    result = (await graph.invoke(new Command({ resume: resumePayload }), config)) as FleetState;
   } else {
     if (!question) {
       console.error('[langgraph] --question is required on first run');
       process.exit(2);
     }
     console.log(`[langgraph] Starting/Resuming ${threadId}`);
-    result = (await graph.invoke(
-      { slug, question },
-      config,
-    )) as FleetState;
+    result = (await graph.invoke({ slug, question }, config)) as FleetState;
   }
 
-  console.log('\n' + '='.repeat(60));
+  console.log(`\n${'='.repeat(60)}`);
   console.log(`Agent Fleet LangGraph Result — ${threadId}`);
   console.log('='.repeat(60));
   console.log(`Research done:     ${result.researchDone}`);

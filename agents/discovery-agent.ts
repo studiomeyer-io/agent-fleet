@@ -24,7 +24,7 @@ const config: AgentConfig = {
   type: 'discovery',
   defaultModel: 'claude-opus-4-6',
   maxTurns: 30,
-  mcpServers: pickMcp('code-pathfinder'),
+  mcpServers: pickMcp('context7'),
   extraTools: ['Read', 'Glob', 'Grep', 'Bash'],
 };
 
@@ -108,7 +108,7 @@ ${scanDepth}
 
 APPROACH:
 1. Read package.json, README.md for project overview
-2. Use code-pathfinder tools (find_symbol, get_callers, get_callees) for call analysis
+2. Use Glob + Grep + Read for structure and call analysis (definitions, imports, call sites)
 3. Use Glob to scan the directory structure
 4. Read suspicious files with Read to verify problems
 5. Use Grep for pattern search (e.g. \`any\`, \`TODO\`, \`HACK\`, unhandled errors)
@@ -166,10 +166,18 @@ async function main(): Promise<void> {
 
   // Determine model
   let model: string | undefined;
-  const filteredArgs = args.filter(a => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+  const filteredArgs = args.filter((a) => {
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -183,7 +191,7 @@ async function main(): Promise<void> {
 
   // Parse --quick
   const quick = filteredArgs.includes('--quick');
-  const remaining = filteredArgs.filter(a => a !== '--quick');
+  const remaining = filteredArgs.filter((a) => a !== '--quick');
 
   // Parse --focus
   let focus: ScanFocus = 'full';
@@ -231,4 +239,7 @@ Options:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

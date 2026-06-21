@@ -20,7 +20,7 @@ const config: AgentConfig = {
   type: 'analyst',
   defaultModel: 'claude-opus-4-6',
   maxTurns: 30,
-  mcpServers: pickMcp('code-pathfinder', 'context'),
+  mcpServers: pickMcp('context7'),
   extraTools: ['Read', 'Glob', 'Grep', 'Bash', 'WebSearch'],
 };
 
@@ -131,10 +131,18 @@ async function main(): Promise<void> {
 
   // Determine model
   let model: string | undefined;
-  const filteredArgs = args.filter(a => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+  const filteredArgs = args.filter((a) => {
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -170,9 +178,7 @@ Options:
     return;
   }
 
-  const topic = type === 'compare'
-    ? `Compare: ${paths.join(' vs ')}`
-    : `${type}: ${paths[0]}`;
+  const topic = type === 'compare' ? `Compare: ${paths.join(' vs ')}` : `${type}: ${paths[0]}`;
 
   const result = await runAgent(config, {
     topic,
@@ -187,4 +193,7 @@ Options:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

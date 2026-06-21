@@ -13,11 +13,12 @@
 ![GitHub stars](https://img.shields.io/github/stars/studiomeyer-io/agent-fleet?style=flat-square&color=ffd700&logo=github&label=stars)
 <!-- /badges -->**Multi-agent orchestration for Claude Code CLI.**
 
-[![npm version](https://img.shields.io/npm/v/agent-fleet?color=blue)](https://www.npmjs.com/package/agent-fleet)
-[![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions)
+[![CI](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/codeql.yml/badge.svg)](https://github.com/studiomeyer-io/agent-fleet/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/studiomeyer-io/agent-fleet/badge)](https://scorecard.dev/viewer/?uri=github.com/studiomeyer-io/agent-fleet)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](tsconfig.json)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](https://nodejs.org)
 
 Run specialized AI agents in **parallel rounds** (Conductor) or as **stateful workflows with crash-resume + Human-in-the-Loop** (Conductor-LangGraph, opt-in).<br>
 Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with [MCP](https://modelcontextprotocol.io/) tool integration. Subscription-flat by default.
@@ -57,10 +58,10 @@ Most AI agent frameworks treat LLMs as API endpoints — you manage tokens, tool
 |-------|------|-------|
 | **Research** | Deep research with 8 modes (general, vision, tech, product, competitor, paper, idea, news) | Tavily, Context7, WebSearch |
 | **Critic** | Devil's advocate — challenges ideas, plans, and reports | Tavily, WebSearch |
-| **Analyst** | Code archaeologist — analyzes projects, finds patterns, health checks | CodePathfinder, Read/Glob/Grep |
-| **Discovery** | Code scanner with 7 focus areas (security, dead-code, types, errors, patterns, debt) | CodePathfinder, Read/Glob/Grep |
-| **Repair** | Automated bug fixer — takes Discovery findings and fixes them | CodePathfinder, Read/Edit/Write |
-| **CTO** | The one who actually fixes — live code changes during discussions | CodePathfinder, Read/Edit/Write |
+| **Analyst** | Code archaeologist — analyzes projects, finds patterns, health checks | Read/Glob/Grep/Bash, Context7, WebSearch |
+| **Discovery** | Code scanner with 7 focus areas (security, dead-code, types, errors, patterns, debt) | Read/Glob/Grep/Bash, Context7 |
+| **Repair** | Automated bug fixer — takes Discovery findings and fixes them (`--dry-run`: read-only) | Read/Edit/Write, Context7 |
+| **CTO** | The one who actually fixes — live code changes during discussions (`--dry-run`: read-only) | Read/Edit/Write, Context7 |
 | **Conductor** | Multi-agent discussion orchestrator — parallel rounds + synthesis | All of the above |
 
 ## Quick Start
@@ -74,10 +75,11 @@ claude auth login                          # Authenticate
 git clone https://github.com/studiomeyer-io/agent-fleet.git
 cd agent-fleet
 npm install
-# For the opt-in LangGraph stateful mode, also pull the optional deps (Node >= 20):
+# For the opt-in LangGraph stateful mode, also pull the optional deps:
 #   npm install --include=optional
 
 # Verify the clone works before wiring in agents
+npm run check       # Biome lint + format check
 npm run typecheck
 npm test
 
@@ -170,8 +172,6 @@ npm run conductor -- --sonnet "Topic"        # Use Sonnet (faster, cheaper)
 
 ```bash
 # Install LangGraph + Postgres deps (optional dependencies)
-# Note: requires Node >= 20 (transitively via @langchain/core).
-# The parallel `Conductor` mode still works on Node 18.
 npm install --include=optional
 
 # Create the langgraph schema (idempotent — safe to re-run)
@@ -245,18 +245,20 @@ reports/                     # Markdown reports with YAML frontmatter
 
 ### MCP Servers
 
-Agents use these MCP servers (all via `npx`, no local installation needed):
+Agents use these MCP servers (all via `npx`, no local installation needed). Every
+entry in the registry is a real, npx-resolvable package — no placeholders:
 
-| Server | Purpose |
-|--------|--------|
-| `@anthropic/code-pathfinder-mcp` | Call analysis, symbol finding |
-| `@upstash/context7-mcp` | Library documentation |
-| `@nicholasarner/context-mcp` | Package search & docs |
-| `@anthropic/github-mcp` | GitHub integration |
-| `@anthropic/sequential-thinking-mcp` | Reasoning chains |
-| `tavily-mcp` | Deep web research (needs API key) |
+| Server | Package | Purpose |
+|--------|---------|---------|
+| Context7 | `@upstash/context7-mcp` | Up-to-date library documentation |
+| Sequential Thinking | `@modelcontextprotocol/server-sequential-thinking` | Structured reasoning chains |
+| Tavily | `tavily-mcp` | Deep web research (needs `TAVILY_API_KEY`) |
 
-Add your own in `agents/lib/mcp-config.ts`.
+Code analysis (symbol search, callers, callees) runs on Claude Code's **built-in
+Read/Glob/Grep/Bash tools** — no extra MCP server required, so the registry stays
+small and every entry actually resolves.
+
+Add your own (local `node` servers or other `npx` packages) in [`agents/lib/mcp-config.ts`](agents/lib/mcp-config.ts).
 
 ## Database (Optional)
 
@@ -297,7 +299,7 @@ export const mcpServers = {
 };
 ```
 
-Then use in agents: `pickMcp('my-server', 'code-pathfinder')`.
+Then use in agents: `pickMcp('my-server', 'context7')`.
 
 ### Creating Custom Agents
 
@@ -310,7 +312,7 @@ const config: AgentConfig = {
   type: 'custom',
   defaultModel: 'claude-opus-4-6',
   maxTurns: 20,
-  mcpServers: pickMcp('tavily', 'code-pathfinder'),
+  mcpServers: pickMcp('tavily', 'context7'),
   extraTools: ['Read', 'Glob', 'Grep', 'WebSearch'],
 };
 
@@ -323,7 +325,7 @@ const result = await runAgent(config, {
 
 ## Requirements
 
-- **Node.js** >= 18
+- **Node.js** >= 22 (Node 18 and 20 are both end-of-life)
 - **Claude Code CLI** — `npm install -g @anthropic-ai/claude-code`
 - **Claude Pro or Max Plan** — for personal use via Claude Code CLI
 - **Anthropic API Key** — for commercial/production use (`ANTHROPIC_API_KEY` env var)

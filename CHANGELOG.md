@@ -2,6 +2,51 @@
 
 ## [Unreleased]
 
+### Security & Correctness
+
+- **MCP registry no longer ships fictional npm packages.** Four of the six entries
+  in `agents/lib/mcp-config.ts` (`@anthropic/code-pathfinder-mcp`,
+  `@nicholasarner/context-mcp`, `@anthropic/github-mcp`,
+  `@anthropic/sequential-thinking-mcp`) do not exist on npm — `npx -y` failed on
+  them, so the Analyst / Discovery / Repair / CTO agents that depended on
+  `code-pathfinder` could not start their advertised tooling. The registry is now
+  three real, npx-resolvable servers (`@upstash/context7-mcp`, `tavily-mcp`,
+  `@modelcontextprotocol/server-sequential-thinking`); code analysis runs on
+  Claude Code's built-in Read/Glob/Grep/Bash tools. Agent prompts, the README MCP
+  table, and the tests were updated to match. New regression test asserts every
+  registered server resolves to a known package.
+- **`db.ts` drops a non-null assertion for a real guard.** `new PoolCtor!(...)`
+  became an explicit `if (!PoolCtor) throw …` with a clear "pg is not installed"
+  message (pg is an optional dependency).
+
+### Added — tooling & supply chain
+
+- **Biome 2.5** (lint + format) — `biome.json` (recommended preset, single-quote
+  TS style), `npm run check` / `check:fix` / `lint` / `format`, enforced in CI.
+- **Vitest coverage gate** — `vitest.config.ts` with `@vitest/coverage-v8` and
+  regression-floor thresholds (lines/statements 33, branches 30, functions 45),
+  `npm run coverage`, wired into CI.
+- **CodeQL** static analysis workflow (`javascript-typescript`, `build-mode: none`).
+- **OpenSSF Scorecard** workflow + README badge (matches the rest of the
+  studiomeyer-io OSS fleet).
+- **Release workflow** — cuts a GitHub Release on a `v*` tag, gated on a green tree.
+- **`.editorconfig`, `.nvmrc` (22), `CITATION.cff`.**
+
+### Changed
+
+- **Node floor raised 18 → 22.** Node 18 and 20 are both end-of-life (2025-04 /
+  2026-03). `engines.node`, the CI matrix (now `[22, 24]`), README and CONTRIBUTING
+  are aligned. CI also hardened: least-privilege `permissions: contents: read`,
+  `concurrency` cancel-in-progress, and a `npm audit --audit-level=high` job.
+- **`package.json` marked `private`.** The `agent-fleet` name on npm belongs to an
+  unrelated package, and Agent Fleet is distributed by git clone — `private` makes
+  that explicit and prevents an accidental publish.
+
+### Removed
+
+- **Stale npm-version badge** in the README — it pointed at the unrelated
+  `agent-fleet` package on npm, not this project.
+
 ### Fixed
 
 - **`runWorkerSubprocess` docs no longer steer forkers into a rejected call.** The

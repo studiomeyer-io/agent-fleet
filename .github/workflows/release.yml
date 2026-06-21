@@ -1,0 +1,47 @@
+name: Release
+
+# Cuts a GitHub Release when a v* tag is pushed. Agent Fleet is a git-clone
+# tool — the `agent-fleet` name on npm belongs to an unrelated package — so
+# there is no npm publish step. The git tag + generated release notes are the
+# distribution. The release is gated on a green tree so a bad tag never ships.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the GitHub Release
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm install --include=optional --no-audit --no-fund
+      - run: npm run check
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "Release ${GITHUB_REF_NAME} already exists — skipping."
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --generate-notes \
+              --title "${GITHUB_REF_NAME}"
+          fi

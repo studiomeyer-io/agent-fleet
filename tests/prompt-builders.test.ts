@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildPrompt as researchBuildPrompt, type ResearchType } from '../agents/research-agent.js';
 import { buildPrompt as criticBuildPrompt, type CritiqueType } from '../agents/critic-agent.js';
 import { buildPrompt as analystBuildPrompt, type AnalysisType } from '../agents/analyst-agent.js';
-import { buildPrompt as discoveryBuildPrompt, type ScanFocus } from '../agents/discovery-agent.js';
+import { buildPrompt as discoveryBuildPrompt } from '../agents/discovery-agent.js';
 import { buildPrompt as repairBuildPrompt } from '../agents/repair-agent.js';
 import { buildPrompt as ctoBuildPrompt } from '../agents/cto-agent.js';
 
@@ -125,7 +125,7 @@ describe('critic buildPrompt', () => {
     for (const type of types) {
       const prompt = criticBuildPrompt(type, 'test');
       expect(prompt).toContain('Critic Agent');
-      expect(prompt).toContain('Devil\'s Advocate');
+      expect(prompt).toContain("Devil's Advocate");
     }
   });
 

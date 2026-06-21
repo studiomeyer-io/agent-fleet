@@ -1,0 +1,61 @@
+name: scorecard
+
+# OpenSSF Scorecard — automated security-posture assessment. Runs the Scorecard
+# suite (Branch-Protection, Code-Review, Dangerous-Workflow, Dependency-Update-
+# Tool, License, Maintained, Pinned-Dependencies, SAST, Security-Policy,
+# Token-Permissions, Vulnerabilities, …) and uploads results to the GitHub
+# Security tab (SARIF) plus the public Scorecard API (so the README badge
+# renders).
+#
+# Score visible at:
+#   https://scorecard.dev/viewer/?uri=github.com/studiomeyer-io/agent-fleet
+
+on:
+  branch_protection_rule:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '18 4 * * 2' # Tuesdays 04:18 UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: scorecard-analysis
+    runs-on: ubuntu-latest
+    permissions:
+      # SARIF upload to the Security tab
+      security-events: write
+      # Required for `publish_results: true` (OIDC -> Scorecard API)
+      id-token: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: run scorecard analysis
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # `publish_results: true` is what makes the README badge work
+          # (otherwise it renders a question-mark forever).
+          publish_results: true
+
+      - name: upload SARIF to security tab
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: scorecard
+
+      - name: upload raw artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 30

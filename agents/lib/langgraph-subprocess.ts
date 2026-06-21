@@ -39,9 +39,9 @@
  * @since 0.2.0
  */
 
-import { spawn, type ChildProcess } from 'child_process';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../..');
@@ -113,9 +113,7 @@ export function assertValidSlug(slug: string): void {
     throw new Error('Invalid slug: empty or not a string');
   }
   if (!SLUG_PATTERN.test(slug)) {
-    throw new Error(
-      `Invalid slug "${slug}": must match /^[a-z0-9][a-z0-9-]{0,99}$/`,
-    );
+    throw new Error(`Invalid slug "${slug}": must match /^[a-z0-9][a-z0-9-]{0,99}$/`);
   }
 }
 
@@ -305,9 +303,7 @@ export function extractMarkerResult(stdout: string): WorkerStdoutResult | null {
 export function emitLangGraphMarker(result: WorkerStdoutResult): void {
   if (!process.env.AGENT_FLEET_LANGGRAPH) return;
   const json = JSON.stringify(result);
-  process.stdout.write(
-    `\n${LANGGRAPH_RESULT_BEGIN_MARKER}\n${json}\n${LANGGRAPH_RESULT_END_MARKER}\n`,
-  );
+  process.stdout.write(`\n${LANGGRAPH_RESULT_BEGIN_MARKER}\n${json}\n${LANGGRAPH_RESULT_END_MARKER}\n`);
 }
 
 /**

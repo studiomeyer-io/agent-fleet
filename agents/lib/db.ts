@@ -5,8 +5,8 @@
  * Reports are always saved to files regardless.
  */
 
-import { createRequire } from 'module';
-import type { Pool as PgPool, PoolConfig } from 'pg';
+import { createRequire } from 'node:module';
+import type { PoolConfig } from 'pg';
 
 interface DbPool {
   query(text: string, values?: unknown[]): Promise<{ rows: Record<string, unknown>[] }>;
@@ -21,16 +21,28 @@ async function getPool(): Promise<DbPool> {
       const pg = await import('pg');
       PoolCtor = (pg.default?.Pool ?? pg.Pool) as unknown as NonNullable<typeof PoolCtor>;
     } catch {
-      const require = createRequire(import.meta.url);
-      const pg = require('pg') as typeof import('pg');
-      PoolCtor = pg.Pool as unknown as typeof PoolCtor;
+      // ESM dynamic import failed (some loaders/bundlers) — try the CJS path.
+      // If THAT also throws (pg not installed at all), swallow it and leave
+      // PoolCtor null so the guard below fires with a friendly message instead
+      // of letting an unhandled MODULE_NOT_FOUND escape getPool().
+      try {
+        const require = createRequire(import.meta.url);
+        const pg = require('pg') as typeof import('pg');
+        PoolCtor = (pg.default?.Pool ?? pg.Pool) as unknown as typeof PoolCtor;
+      } catch {
+        // pg is not installed — handled by the guard below.
+      }
     }
   }
 
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL not set');
+  // `pg` is an optional dependency — if neither the dynamic import nor the
+  // require fallback above resolved a constructor, fail with a clear message
+  // instead of a cryptic "PoolCtor is not a constructor".
+  if (!PoolCtor) throw new Error('pg is not installed — run `npm install pg` (or `npm install --include=optional`)');
 
-  return new PoolCtor!({ connectionString: url, max: 2 });
+  return new PoolCtor({ connectionString: url, max: 2 });
 }
 
 let pool: DbPool | null = null;
@@ -127,7 +139,10 @@ export async function getRecentReports(agentType?: string, limit = 10): Promise<
   if (!process.env.DATABASE_URL) return [];
   const p = await db();
   const result = agentType
-    ? await p.query('SELECT * FROM agent_reports WHERE agent_type = $1 ORDER BY created_at DESC LIMIT $2', [agentType, limit])
+    ? await p.query('SELECT * FROM agent_reports WHERE agent_type = $1 ORDER BY created_at DESC LIMIT $2', [
+        agentType,
+        limit,
+      ])
     : await p.query('SELECT * FROM agent_reports ORDER BY created_at DESC LIMIT $1', [limit]);
   return result.rows as unknown as AgentReport[];
 }

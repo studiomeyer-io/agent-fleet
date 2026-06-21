@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemorySaver, START, END } from '@langchain/langgraph';
+import { MemorySaver } from '@langchain/langgraph';
 import * as subprocessMod from '../agents/lib/langgraph-subprocess.js';
 import {
   buildAgentFleetWorkflow,
@@ -99,15 +99,13 @@ describe('conductor-langgraph happy path', () => {
 
 describe('conductor-langgraph HITL path', () => {
   it('pauses at user_approval when critic flags HIGH/CRITICAL', async () => {
-    runWorkerSpy
-      .mockResolvedValueOnce(makeRunResult({ worker: 'research', slug: 'risky' }))
-      .mockResolvedValueOnce(
-        makeRunResult({
-          worker: 'critic',
-          slug: 'risky',
-          markerSummary: '## CRITICAL: API key leakage in env',
-        }),
-      );
+    runWorkerSpy.mockResolvedValueOnce(makeRunResult({ worker: 'research', slug: 'risky' })).mockResolvedValueOnce(
+      makeRunResult({
+        worker: 'critic',
+        slug: 'risky',
+        markerSummary: '## CRITICAL: API key leakage in env',
+      }),
+    );
     // analyst is NOT mocked because it should not run yet (paused at user_approval)
 
     const graph = makeGraphAgainstMemorySaver();
@@ -161,17 +159,15 @@ describe('conductor-langgraph failure path', () => {
 
 describe('conductor-langgraph timeout path', () => {
   it('treats a timed-out worker as an error and ends the workflow', async () => {
-    runWorkerSpy
-      .mockResolvedValueOnce(makeRunResult({ worker: 'research', slug: 'to' }))
-      .mockResolvedValueOnce(
-        makeRunResult({
-          worker: 'critic',
-          slug: 'to',
-          exitCode: null,
-          timedOut: true,
-          markerSummary: '',
-        }),
-      );
+    runWorkerSpy.mockResolvedValueOnce(makeRunResult({ worker: 'research', slug: 'to' })).mockResolvedValueOnce(
+      makeRunResult({
+        worker: 'critic',
+        slug: 'to',
+        exitCode: null,
+        timedOut: true,
+        markerSummary: '',
+      }),
+    );
 
     const graph = makeGraphAgainstMemorySaver();
     const config = { configurable: { thread_id: 'agent-fleet-to' } };
@@ -191,9 +187,7 @@ describe('conductor-langgraph state reducers', () => {
   it('appends worker runs in run order across nodes', async () => {
     runWorkerSpy
       .mockResolvedValueOnce(makeRunResult({ worker: 'research', slug: 'order' }))
-      .mockResolvedValueOnce(
-        makeRunResult({ worker: 'critic', slug: 'order', markerSummary: 'low risk' }),
-      )
+      .mockResolvedValueOnce(makeRunResult({ worker: 'critic', slug: 'order', markerSummary: 'low risk' }))
       .mockResolvedValueOnce(makeRunResult({ worker: 'analyst', slug: 'order' }));
 
     const graph = makeGraphAgainstMemorySaver();
@@ -231,7 +225,6 @@ describe('conductor-langgraph state reducers', () => {
     expect(finalState.errors.some((e) => e.worker === 'critic')).toBe(true);
   });
 });
-
 
 // ─── detectHighRisk: the HITL routing gate (pure function) ───────
 //

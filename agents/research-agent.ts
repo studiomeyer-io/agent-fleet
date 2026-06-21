@@ -21,9 +21,9 @@
 
 import { runAgent, type AgentConfig } from './lib/base-agent.js';
 import { pickMcp } from './lib/mcp-config.js';
-import { readdir, readFile } from 'fs/promises';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { readdir, readFile } from 'node:fs/promises';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(__dirname, '../reports');
@@ -196,7 +196,10 @@ At the END, add this metadata block:
 async function listReports(): Promise<void> {
   try {
     const files = await readdir(REPORTS_DIR);
-    const mdFiles = files.filter((f) => f.endsWith('.md')).sort().reverse();
+    const mdFiles = files
+      .filter((f) => f.endsWith('.md'))
+      .sort()
+      .reverse();
 
     if (mdFiles.length === 0) {
       console.log('No reports found.');
@@ -258,9 +261,17 @@ async function main(): Promise<void> {
   // Determine model
   let model: string | undefined;
   const filteredArgs = args.filter((a) => {
-    if (a === '--sonnet') { model = 'claude-sonnet-4-6'; return false; }
-    if (a === '--haiku') { model = 'claude-haiku-4-5-20251001'; return false; }
-    if (a === '--opus') { return false; }
+    if (a === '--sonnet') {
+      model = 'claude-sonnet-4-6';
+      return false;
+    }
+    if (a === '--haiku') {
+      model = 'claude-haiku-4-5-20251001';
+      return false;
+    }
+    if (a === '--opus') {
+      return false;
+    }
     return true;
   });
 
@@ -322,4 +333,7 @@ Options:
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

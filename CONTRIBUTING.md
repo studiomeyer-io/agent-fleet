@@ -12,14 +12,18 @@ npm install
 
 ### Prerequisites
 
-- Node.js >= 18
+- Node.js >= 22 (Node 18 and 20 are end-of-life)
 - Claude Code CLI (`npm install -g @anthropic-ai/claude-code`)
 - Claude Max Plan (recommended for flat-rate multi-agent usage)
 
-### Type Check
+### Checks
+
+Run the same gate CI runs before opening a PR:
 
 ```bash
-npm run typecheck
+npm run check       # Biome lint + format check (npm run check:fix to autofix)
+npm run typecheck   # tsc --noEmit
+npm run coverage    # vitest + coverage thresholds
 ```
 
 ## Project Structure
@@ -76,7 +80,8 @@ Edit `agents/lib/mcp-config.ts` and add your server to the `mcpServers` object. 
 ### Code Style
 
 - TypeScript strict mode, no `any`
-- ES modules (`import`/`export`)
+- ES modules (`import`/`export`), `node:` protocol for built-ins
+- Formatting + linting via [Biome](https://biomejs.dev) — run `npm run check:fix`
 - Minimal dependencies
 - Prompts in English
 
@@ -85,7 +90,7 @@ Edit `agents/lib/mcp-config.ts` and add your server to the `mcpServers` object. 
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feat/my-agent`)
 3. Make your changes
-4. Run `npm run typecheck`
+4. Run `npm run check && npm run typecheck && npm test`
 5. Commit with a descriptive message
 6. Open a PR
 

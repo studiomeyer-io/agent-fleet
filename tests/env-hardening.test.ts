@@ -18,10 +18,7 @@ import { resolve } from 'node:path';
 //      previous `> 100` bar accepted noise.
 // ============================================================
 
-const SOURCE = readFileSync(
-  resolve(__dirname, '../agents/lib/base-agent.ts'),
-  'utf-8',
-);
+const SOURCE = readFileSync(resolve(__dirname, '../agents/lib/base-agent.ts'), 'utf-8');
 
 describe('agent-fleet env hardening', () => {
   it('strips ANTHROPIC_API_KEY from spawned claude env', () => {
@@ -46,13 +43,13 @@ describe('agent-fleet SIGTERM output guard', () => {
     // There are two spawn sites; both must use the hardened guard.
     const matches = SOURCE.match(/signal === 'SIGTERM' && stdout\.length >= 500/g);
     expect(matches, 'expected the hardened SIGTERM guard in both spawn call-sites').toBeTruthy();
-    expect(matches!.length).toBeGreaterThanOrEqual(2);
+    expect(matches?.length).toBeGreaterThanOrEqual(2);
   });
 
   it('requires structured output (## header) before accepting SIGTERM', () => {
     const matches = SOURCE.match(/stdout\.includes\('## '\)/g);
     expect(matches).toBeTruthy();
-    expect(matches!.length).toBeGreaterThanOrEqual(2);
+    expect(matches?.length).toBeGreaterThanOrEqual(2);
   });
 
   it('does not keep the old permissive "> 100" fallback anywhere', () => {
