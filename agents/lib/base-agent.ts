@@ -211,8 +211,8 @@ export function makeFilename(type: string, topic: string): string {
 /** @internal Exported for testing */
 export function parseMetadata(content: string): Record<string, unknown> {
   const patterns = [
-    /```json-metadata\s*\n([\s\S]*?)\n\s*```/,
-    /```json\s*\n(\{[\s\S]*?"total_sources"[\s\S]*?\})\n\s*```/,
+    /```json-metadata[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*```/,
+    /```json[ \t]*\r?\n(\{[\s\S]*?"total_sources"[\s\S]*?\})\r?\n[ \t]*```/,
   ];
   for (const pattern of patterns) {
     const match = content.match(pattern);
@@ -229,7 +229,7 @@ export function parseMetadata(content: string): Record<string, unknown> {
 
 /** @internal Exported for testing */
 export function extractSummary(content: string, maxLength = 500): string {
-  const summaryMatch = content.match(/## (?:Executive Summary|Summary|TL;DR)\s*\n([\s\S]*?)(?=\n## |\n---|\n$)/i);
+  const summaryMatch = content.match(/## (?:Executive Summary|Summary|TL;DR)[ \t]*\r?\n([\s\S]*?)(?=\n## |\n---|\n$)/i);
   if (summaryMatch) return summaryMatch[1].trim().slice(0, maxLength);
   const firstPara = content.split('\n\n').find((p) => p.trim().length > 50);
   return (firstPara ?? content.slice(0, maxLength)).trim().slice(0, maxLength);
