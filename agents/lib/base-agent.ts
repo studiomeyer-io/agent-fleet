@@ -208,20 +208,39 @@ export function makeFilename(type: string, topic: string): string {
   return `${date}-${type}-${slug}.md`;
 }
 
+/**
+ * Body of the first fenced block whose opening line is exactly `fence`.
+ *
+ * Deliberately a line walk instead of `/fence\n([\s\S]*?)\n```/`: the lazy
+ * scan in that regex restarts at every position the opener matches, so input
+ * that repeats the opener and never closes it costs one full scan per
+ * repetition — quadratic (CodeQL js/polynomial-redos). Walking lines touches
+ * each line at most twice, closed block or not. An opener with no terminator
+ * ends the search: no later opener could find one either.
+ */
+function fencedBody(content: string, fence: string): string | null {
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trimEnd() !== fence) continue;
+    for (let j = i + 1; j < lines.length; j++) {
+      if (lines[j].trimStart().startsWith('```')) return lines.slice(i + 1, j).join('\n');
+    }
+    return null;
+  }
+  return null;
+}
+
 /** @internal Exported for testing */
 export function parseMetadata(content: string): Record<string, unknown> {
-  const patterns = [
-    /```json-metadata[ \t]*\r?\n([\s\S]*?)\r?\n[ \t]*```/,
-    /```json[ \t]*\r?\n(\{[\s\S]*?"total_sources"[\s\S]*?\})\r?\n[ \t]*```/,
-  ];
-  for (const pattern of patterns) {
-    const match = content.match(pattern);
-    if (match) {
-      try {
-        return JSON.parse(match[1]) as Record<string, unknown>;
-      } catch {
-        // Ignore malformed metadata
-      }
+  const metaBody = fencedBody(content, '```json-metadata');
+  const jsonBody = fencedBody(content, '```json');
+  for (const body of [metaBody, jsonBody]) {
+    // The bare ```json block only counts as metadata when it carries the marker.
+    if (body === null || (body === jsonBody && !body.includes('"total_sources"'))) continue;
+    try {
+      return JSON.parse(body) as Record<string, unknown>;
+    } catch {
+      // Ignore malformed metadata
     }
   }
   return {};
@@ -229,8 +248,16 @@ export function parseMetadata(content: string): Record<string, unknown> {
 
 /** @internal Exported for testing */
 export function extractSummary(content: string, maxLength = 500): string {
-  const summaryMatch = content.match(/## (?:Executive Summary|Summary|TL;DR)[ \t]*\r?\n([\s\S]*?)(?=\n## |\n---|\n$)/i);
-  if (summaryMatch) return summaryMatch[1].trim().slice(0, maxLength);
+  // Heading first, then a plain forward search for the terminator. Folding both
+  // into one regex means a lazy `([\s\S]*?)` in front of a lookahead, which
+  // rescans to end-of-input for every heading match — quadratic on input that
+  // repeats the heading (CodeQL js/polynomial-redos). Two linear passes instead.
+  const heading = /## (?:Executive Summary|Summary|TL;DR)[ \t]*\r?\n/i.exec(content);
+  if (heading) {
+    const rest = content.slice(heading.index + heading[0].length);
+    const end = rest.search(/\n## |\n---|\n$/);
+    return (end === -1 ? rest : rest.slice(0, end)).trim().slice(0, maxLength);
+  }
   const firstPara = content.split('\n\n').find((p) => p.trim().length > 50);
   return (firstPara ?? content.slice(0, maxLength)).trim().slice(0, maxLength);
 }
