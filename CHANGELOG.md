@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Dependency maintenance
+
+- Refresh locked transitive dependencies within existing manifest ranges. This lockfile maintenance does not publish a new package or change its public API.
+
 ## 0.3.0 (2026-06-21)
 
 **First release on npm as `@studiomeyer-io/agent-fleet`.**
